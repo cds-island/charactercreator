@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Character Creator - Final Lux Build</title>
+    <style>
+        :root { --ui-blue: #7ba1e3; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #5a81c3; font-family: sans-serif; }
+        
+        .bg {
+            position: fixed; width: 200%; height: 200%;
+            background-image: url('Background.png');
+            animation: scroll 40s linear infinite; z-index: 1; opacity: 0.6;
+        }
+        @keyframes scroll { from { background-position: 0 0; } to { background-position: -800px -800px; } }
+
+        #overlay {
+            position: fixed; inset: 0; background: var(--ui-blue); z-index: 100;
+            display: flex; justify-content: center; align-items: center; cursor: pointer; color: white;
+        }
+
+        .main-ui { position: relative; z-index: 10; display: none; min-height: 100vh; justify-content: center; align-items: center; gap: 40px; padding: 24px; box-sizing: border-box; }
+
+        .stage { position: relative; width: 380px; height: 540px; }
+        .layer { position: absolute; left: 50%; transform: translateX(-50%); pointer-events: none; }
+        .mask { -webkit-mask-repeat: no-repeat; -webkit-mask-position: center; -webkit-mask-size: contain; }
+
+        /* Eye Group */
+        #eye-group { position: absolute; left: 50%; transform: translateX(-50%); width: 144px; height: 48px; z-index: 15; }
+        .eye-img { width: 30px; position: absolute; top: 0; transform-origin: center; }
+        #eye-r { transform: scaleX(-1); }
+
+        /* HUD */
+        .hud { background: rgba(241,247,250,0.96); padding: 18px; border-radius: 30px; width: 430px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); border: 5px solid white; }
+        .selector-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+        .part-btn { height: 70px; border-radius: 18px; border: 5px solid #7f969b; cursor: pointer; background: linear-gradient(180deg, #d4e0e3, #b5c7cb); color: #32585b; font-weight: bold; font-size: 11px; text-transform: uppercase; display: flex; align-items: center; justify-content: center; padding: 8px; box-sizing: border-box; }
+        .part-btn.active { background: linear-gradient(180deg, #06b68c, #07926f); color: white; border-color: #74888d; }
+        .option-panel { width: 100%; background: linear-gradient(180deg, #e4edf0, #d8e3e7); border: 5px solid #93a8ac; border-radius: 28px; padding: 14px; box-sizing: border-box; }
+        .option-header { display: flex; gap: 10px; margin-bottom: 12px; }
+        .option-pill { flex: 1; height: 54px; border-radius: 18px; border: 5px solid #7f969b; background: linear-gradient(180deg, #d6e3e6, #bdd0d4); display: flex; align-items: center; justify-content: center; color: #45656b; font-weight: bold; text-transform: uppercase; font-size: 12px; }
+        .option-pill.active { background: linear-gradient(180deg, #09b88e, #089973); color: white; }
+        .option-layout { display: grid; grid-template-columns: 1.3fr 0.9fr; gap: 12px; }
+        .option-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .option-btn { min-height: 102px; border-radius: 22px; border: 5px solid #7f969b; background: linear-gradient(180deg, #ffffff, #f1f5f6); cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+        .option-btn.active { background: linear-gradient(180deg, #86f3c5, #1de593); }
+        .option-sprite { width: 74px; height: 64px; object-fit: contain; image-rendering: pixelated; }
+        .swatch-panel { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; align-content: start; }
+        .swatch-btn { height: 72px; border-radius: 20px; border: 5px solid #7f969b; cursor: pointer; }
+        .swatch-btn.active { border-color: #0ec291; box-shadow: inset 0 0 0 4px rgba(255,255,255,0.85); }
+        #option-title { margin: 0 0 10px; color: #49656a; font-size: 14px; letter-spacing: 0.05em; text-transform: uppercase; }
+        
+        .control-panel { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .color-section { width: 100%; display: flex; align-items: center; justify-content: space-between; background: #eee; padding: 10px; border-radius: 15px; }
+        
+        .btn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+        .icon-btn { 
+            width: 75px; height: 75px; border: none; cursor: pointer;
+            background: url('ButtonBlankSize.png') no-repeat center; background-size: contain;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .icon-btn img { width: 32px; }
+        .rot90 { transform: rotate(90deg); }
+        .rot-90 { transform: rotate(-90deg); }
+
+        @media (max-width: 900px) {
+            .main-ui { flex-direction: column; gap: 18px; }
+            .stage { width: 330px; height: 500px; }
+            .hud { width: min(430px, 100%); }
+            .option-layout { grid-template-columns: 1fr; }
+            .swatch-panel { grid-template-columns: repeat(3, 1fr); }
+            .icon-btn { width: 68px; height: 68px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg"></div>
+
+    <div id="overlay" onclick="start()"><h1>CLICK TO START</h1></div>
+
+    <div class="main-ui" id="ui">
+        <div class="stage">
+            <div id="p-foot-l" class="layer mask" style="width:63px; height:16px; bottom:100px; margin-left:-19px; z-index:1; -webkit-mask-image:url('Foot.png'); background-color:#f3d2b3;"></div>
+            <div id="p-foot-r" class="layer mask" style="width:63px; height:16px; bottom:100px; margin-left:19px; z-index:1; -webkit-mask-image:url('Foot.png'); background-color:#f3d2b3; transform: translateX(-50%) scaleX(-1);"></div>
+            <div id="p-pant-l" class="layer mask" style="width:56px; height:49px; bottom:118px; margin-left:-13px; z-index:2; -webkit-mask-image:url('PantLeg.png'); background-color:#7b8be9;"></div>
+            <div id="p-pant-r" class="layer mask" style="width:56px; height:49px; bottom:118px; margin-left:13px; z-index:2; -webkit-mask-image:url('PantLeg.png'); background-color:#7b8be9; transform: translateX(-50%) scaleX(-1);"></div>
+            
+            <div id="p-arm-l" class="layer mask" style="width:44px; height:35px; top:343px; margin-left:-69px; z-index:3; -webkit-mask-image:url('Arm.png'); background-color:#f3d2b3; transform: translateX(-50%) rotate(0deg);"></div>
+            <div id="p-arm-r" class="layer mask" style="width:44px; height:35px; top:343px; margin-left:69px; z-index:3; -webkit-mask-image:url('Arm.png'); background-color:#f3d2b3; transform: translateX(-50%) scaleX(-1) rotate(0deg);"></div>
+            <div id="p-sleeve-l" class="layer mask" style="width:38px; height:69px; top:294px; margin-left:-45px; z-index:4; -webkit-mask-image:url('Sleve.png'); background-color:#f06fe2; transform: translateX(-50%) rotate(10deg);"></div>
+            <div id="p-sleeve-r" class="layer mask" style="width:38px; height:69px; top:294px; margin-left:45px; z-index:4; -webkit-mask-image:url('Sleve.png'); background-color:#f06fe2; transform: translateX(-50%) scaleX(-1) rotate(-10deg);"></div>
+            <div id="p-body" class="layer mask" style="width:84px; height:102px; top:281px; z-index:5; -webkit-mask-image:url('Body.png'); background-color:#f06fe2;"></div>
+            
+            <div id="p-head" class="layer mask" style="width:138px; height:129px; top:146px; z-index:6; -webkit-mask-image:url('head.png'); background-color:#f3d2b3;"></div>
+            
+            <div id="p-shading" class="layer mask" style="width:27px; height:14px; top:221px; z-index:17; -webkit-mask-image:url('shading.png'); background-color:#b48a61;"></div>
+            
+            <div id="eye-group" style="top:189px;">
+                <img src="eye.png" class="eye-img" id="eye-l" style="left: 22px; width:44px; top:0;">
+                <img src="eye.png" class="eye-img" id="eye-r" style="right: 22px; width:44px; top:0;">
+            </div>
+            
+            <img id="p-mouth" src="Mouth.png" class="layer" style="width:22px; top:244px; z-index:16;">
+            <div id="p-hair" class="layer mask" style="width:216px; height:202px; top:94px; z-index:20; -webkit-mask-image:url('hair.png'); background-color:#5a3d1a;"></div>
+        </div>
+
+        <div class="hud">
+            <div class="selector-grid">
+                <button class="part-btn active" onclick="selectPart('p-hair', this)">Hair</button>
+                <button class="part-btn" onclick="selectPart('eye-group', this)">Eyes</button>
+                <button class="part-btn" onclick="selectPart('p-head', this)">Skin</button>
+                <button class="part-btn" onclick="selectPart('p-body', this)">Shirt</button>
+                <button class="part-btn" onclick="selectPart('p-pant', this)">Pants</button>
+                <button class="part-btn" onclick="selectPart('p-shading', this)">Nose</button>
+                <button class="part-btn" onclick="selectPart('p-mouth', this)">Mouth</button>
+            </div>
+
+            <div class="control-panel">
+                <div class="option-panel">
+                    <div class="option-header">
+                        <div class="option-pill active">Styles</div>
+                        <div class="option-pill">Colors</div>
+                    </div>
+                    <div class="option-layout">
+                        <div>
+                            <h3 id="option-title">Hair Styles</h3>
+                            <div class="option-grid" id="option-grid"></div>
+                        </div>
+                        <div class="swatch-panel" id="swatch-panel">
+                            <button class="swatch-btn" data-swatch="#f3d2b3" style="background:#f3d2b3;" onclick="chooseSwatch('#f3d2b3', this)"></button>
+                            <button class="swatch-btn" data-swatch="#ffd9bd" style="background:#ffd9bd;" onclick="chooseSwatch('#ffd9bd', this)"></button>
+                            <button class="swatch-btn" data-swatch="#ffc477" style="background:#ffc477;" onclick="chooseSwatch('#ffc477', this)"></button>
+                            <button class="swatch-btn" data-swatch="#5a3d1a" style="background:#5a3d1a;" onclick="chooseSwatch('#5a3d1a', this)"></button>
+                            <button class="swatch-btn" data-swatch="#f06fe2" style="background:#f06fe2;" onclick="chooseSwatch('#f06fe2', this)"></button>
+                            <button class="swatch-btn" data-swatch="#7b8be9" style="background:#7b8be9;" onclick="chooseSwatch('#7b8be9', this)"></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="color-section">
+                    <label style="font-weight:bold; color:var(--ui-blue)">COLOR</label>
+                    <input type="color" id="color-wheel" oninput="updateColor(this.value)">
+                </div>
+
+                <div class="btn-grid">
+                    <button class="icon-btn" onclick="modify('y', -5)"><img src="UArrowSymbol.png"></button>
+                    <button class="icon-btn" onclick="modify('s', 0.05)"><img src="LargenSymbol.png"></button>
+                    <button class="icon-btn" onclick="modify('r', -10)"><img src="RotateSymbolL.png"></button>
+                    <button class="icon-btn" onclick="eyeDist(2)"><img src="WidenSymbol.png" alt="Widen"></button>
+                    
+                    <button class="icon-btn" onclick="modify('y', 5)"><img src="DArrowSymbol.png"></button>
+                    <button class="icon-btn" onclick="modify('s', -0.05)"><img src="ShrinkenSymbol.png"></button>
+                    <button class="icon-btn" onclick="modify('r', 10)"><img src="RotateSymbolR.png"></button>
+                    <button class="icon-btn" onclick="eyeDist(-2)"><img src="NarrowSymbol.png" alt="Narrow"></button>
+                    
+                    <button class="icon-btn" onclick="modify('x', -5)"><img src="UArrowSymbol.png" class="rot-90"></button>
+                    <div style="grid-column: span 2; display:flex; align-items:center; justify-content:center; font-weight:bold; color:var(--ui-blue); font-size:12px;">ADJUST</div>
+                    <button class="icon-btn" onclick="modify('x', 5)"><img src="UArrowSymbol.png" class="rot90"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="bgm" src="Music.mp3" loop></audio>
+
+    <script>
+        const audio = document.getElementById('bgm');
+        let selectedId = 'p-hair';
+        let eyeSpacing = 30;
+        const optionGrid = document.getElementById('option-grid');
+        const optionTitle = document.getElementById('option-title');
+        const swatchPanel = document.getElementById('swatch-panel');
+
+        const parts = {
+            'p-hair':  { x: 0, y: 94, s: 1, sx: 1, sy: 1, r: 0, col: '#5a3d1a', maxS: 1.2 },
+            'eye-group': { x: 0, y: 189, s: 1, sx: 1, sy: 1, r: 0, col: null, maxS: 2.0 },
+            'p-head':  { x: 0, y: 146, s: 1, sx: 1, sy: 1, r: 0, col: '#f3d2b3', maxS: 1.12 },
+            'p-body':  { x: 0, y: 281, s: 1, sx: 1, sy: 1, r: 0, col: '#f06fe2', maxS: 1.35 },
+            'p-pant':  { x: 0, y: 0, s: 1, sx: 1, sy: 1, r: 0, col: '#7b8be9', maxS: 1.3 },
+            'p-shading': { x: 0, y: 221, s: 1, sx: 1, sy: 1, r: 0, col: '#b48a61', maxS: 1.4 },
+            'p-mouth': { x: 0, y: 244, s: 1, sx: 1, sy: 1, r: 0, col: null, maxS: 2.0 }
+        };
+
+        const paletteGroups = {
+            'p-hair': {
+                title: 'Hair Styles',
+                swatches: ['#5a3d1a', '#7a4b1d', '#2f2216', '#a14c2a', '#f06fe2', '#7b8be9'],
+                options: [
+                    { preview: '<img class="option-sprite" src="hair.png" alt="Hair option 1">', apply: () => render('p-hair') },
+                    { preview: '<img class="option-sprite" src="hair.png" alt="Hair option 2">', apply: () => render('p-hair') },
+                    { preview: '<img class="option-sprite" src="hair.png" alt="Hair option 3">', apply: () => render('p-hair') },
+                    { preview: '<img class="option-sprite" src="hair.png" alt="Hair option 4">', apply: () => render('p-hair') }
+                ]
+            },
+            'p-head': {
+                title: 'Face Shapes',
+                swatches: ['#f3d2b3', '#ffd9bd', '#ffc477', '#e7ad86', '#f6b2a1', '#8c4f1d'],
+                options: [
+                    { preview: '<img class="option-sprite" src="head.png" alt="Face option 1">', apply: () => { Object.assign(parts['p-head'], { x: 0, y: 146, sx: 1, sy: 1, r: 0 }); render('p-head'); } },
+                    { preview: '<img class="option-sprite" src="head.png" alt="Face option 2">', apply: () => { Object.assign(parts['p-head'], { x: 0, y: 124, sx: 1.02, sy: 0.98, r: 0 }); render('p-head'); } },
+                    { preview: '<img class="option-sprite" src="head.png" alt="Face option 3">', apply: () => { Object.assign(parts['p-head'], { x: 0, y: 122, sx: 0.96, sy: 1.06, r: 0 }); render('p-head'); } },
+                    { preview: '<img class="option-sprite" src="head.png" alt="Face option 4">', apply: () => { Object.assign(parts['p-head'], { x: 0, y: 128, sx: 1.04, sy: 0.95, r: 0 }); render('p-head'); } }
+                ]
+            },
+            'eye-group': {
+                title: 'Eye Styles',
+                swatches: ['#5a3d1a', '#2c2c2c', '#0f0f0f', '#7b8be9', '#f06fe2', '#f3d2b3'],
+                options: [
+                    { preview: '<img class="option-sprite" src="eye.png" alt="Eye option 1">', apply: () => setEyePreset({ spacing: 22, width: 44, top: 0, y: 189, scaleY: 1, tilt: 0 }) },
+                    { preview: '<img class="option-sprite" src="eye.png" alt="Eye option 2">', apply: () => setEyePreset({ spacing: 27, width: 31, top: 4, y: 191, scaleY: 0.82, tilt: -8 }) },
+                    { preview: '<img class="option-sprite" src="eye.png" alt="Eye option 3">', apply: () => setEyePreset({ spacing: 29, width: 27, top: -1, y: 186, scaleY: 1.08, tilt: 4 }) },
+                    { preview: '<img class="option-sprite" src="eye.png" alt="Eye option 4">', apply: () => setEyePreset({ spacing: 28, width: 29, top: 2, y: 188, scaleY: 0.94, tilt: 10 }) }
+                ]
+            },
+            'p-shading': {
+                title: 'Nose Styles',
+                swatches: ['#b48a61', '#9d7855', '#7f6246', '#f3d2b3', '#5a3d1a', '#2b2b2b'],
+                options: [
+                    { preview: '<img class="option-sprite" src="shading.png" alt="Nose option 1">', apply: () => setNosePreset({ width: 27, height: 14, x: 0, y: 221, sx: 1, sy: 1, r: 0, opacity: 0.86 }) },
+                    { preview: '<img class="option-sprite" src="shading.png" alt="Nose option 2">', apply: () => setNosePreset({ width: 32, height: 23, x: 0, y: 222, sx: 1.04, sy: 1, r: 0, opacity: 0.84 }) },
+                    { preview: '<img class="option-sprite" src="shading.png" alt="Nose option 3">', apply: () => setNosePreset({ width: 30, height: 24, x: 2, y: 223, sx: 1.05, sy: 1, r: 10, opacity: 0.86 }) },
+                    { preview: '<img class="option-sprite" src="shading.png" alt="Nose option 4">', apply: () => setNosePreset({ width: 28, height: 20, x: -1, y: 221, sx: 0.96, sy: 0.94, r: -8, opacity: 0.74 }) }
+                ]
+            },
+            'p-mouth': {
+                title: 'Mouth Styles',
+                swatches: ['#111111', '#5a3d1a', '#2c2c2c', '#7b8be9', '#f06fe2', '#f3d2b3'],
+                options: [
+                    { preview: '<img class="option-sprite" src="Mouth.png" alt="Mouth option 1">', apply: () => setMouthPreset({ width: 22, x: 0, y: 244, sx: 1, sy: 1, r: 0 }) },
+                    { preview: '<img class="option-sprite" src="Mouth.png" alt="Mouth option 2">', apply: () => setMouthPreset({ width: 24, x: 0, y: 247, sx: 1, sy: 0.92, r: 0 }) },
+                    { preview: '<img class="option-sprite" src="Mouth.png" alt="Mouth option 3">', apply: () => setMouthPreset({ width: 20, x: 0, y: 249, sx: 1.08, sy: 0.82, r: 0 }) },
+                    { preview: '<img class="option-sprite" src="Mouth.png" alt="Mouth option 4">', apply: () => setMouthPreset({ width: 20, x: 1, y: 246, sx: 0.95, sy: 1.08, r: 8 }) }
+                ]
+            },
+            'p-body': {
+                title: 'Shirt Shapes',
+                swatches: ['#f06fe2', '#ff85ed', '#7b8be9', '#5a3d1a', '#f3d2b3', '#26b4a7'],
+                options: [
+                    { preview: '<img class="option-sprite" src="Body.png" alt="Shirt option 1">', apply: () => setBodyPreset({ width: 84, height: 102, y: 281, sleeveOffset: 45, sleeveWidth: 38, sleeveHeight: 69, sleeveY: 294, sleeveAngle: 10, armOffset: 69, armWidth: 44, armHeight: 35, armY: 343, armAngle: 0 }) },
+                    { preview: '<img class="option-sprite" src="Body.png" alt="Shirt option 2">', apply: () => setBodyPreset({ width: 232, height: 148, y: 254, sleeveOffset: 46, sleeveWidth: 44, sleeveY: 287, armOffset: 53, armY: 336 }) },
+                    { preview: '<img class="option-sprite" src="Body.png" alt="Shirt option 3">', apply: () => setBodyPreset({ width: 208, height: 136, y: 266, sleeveOffset: 39, sleeveWidth: 40, sleeveY: 295, armOffset: 46, armY: 340 }) },
+                    { preview: '<img class="option-sprite" src="Body.png" alt="Shirt option 4">', apply: () => setBodyPreset({ width: 214, height: 160, y: 246, sleeveOffset: 40, sleeveWidth: 41, sleeveY: 284, armOffset: 47, armY: 334 }) }
+                ]
+            },
+            'p-pant': {
+                title: 'Pants Shapes',
+                swatches: ['#7b8be9', '#6f7ce1', '#5a3d1a', '#f3d2b3', '#f06fe2', '#2e4f9c'],
+                options: [
+                    { preview: '<img class="option-sprite" src="PantLeg.png" alt="Pants option 1">', apply: () => setPantPreset({ width: 56, height: 49, offset: 13, footOffset: 19, footWidth: 63, footHeight: 16, bottom: 118, footBottom: 100 }) },
+                    { preview: '<img class="option-sprite" src="PantLeg.png" alt="Pants option 2">', apply: () => setPantPreset({ width: 70, height: 96, offset: 15, footOffset: 23 }) },
+                    { preview: '<img class="option-sprite" src="PantLeg.png" alt="Pants option 3">', apply: () => setPantPreset({ width: 60, height: 102, offset: 12, footOffset: 20 }) },
+                    { preview: '<img class="option-sprite" src="PantLeg.png" alt="Pants option 4">', apply: () => setPantPreset({ width: 66, height: 82, offset: 14, footOffset: 22 }) }
+                ]
+            }
+        };
+
+        const selectedOptions = {
+            'p-hair': 0,
+            'p-head': 0,
+            'eye-group': 0,
+            'p-shading': 0,
+            'p-mouth': 0,
+            'p-body': 0,
+            'p-pant': 0
+        };
+
+        function start() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('ui').style.display = 'flex';
+            audio.play().catch(() => {});
+            applyCurrentSelections();
+            renderAll();
+            document.getElementById('color-wheel').value = parts[selectedId].col;
+            renderOptionGrid();
+            syncSwatches();
+        }
+
+        function selectPart(id, btn) {
+            selectedId = id;
+            document.querySelectorAll('.part-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if(parts[id].col) document.getElementById('color-wheel').value = parts[id].col;
+            renderOptionGrid();
+            syncSwatches();
+        }
+
+        function modify(prop, val) {
+            let nextVal = parts[selectedId][prop] + val;
+            if(prop === 's' && parts[selectedId].maxS && nextVal > parts[selectedId].maxS) return;
+            parts[selectedId][prop] = nextVal;
+            if (selectedId === 'p-pant') {
+                document.getElementById('p-pant-l').style.transform = `translateX(calc(-50% + ${parts['p-pant'].x}px)) scale(${parts['p-pant'].s}) rotate(${parts['p-pant'].r}deg)`;
+                document.getElementById('p-pant-r').style.transform = `translateX(calc(-50% + ${parts['p-pant'].x}px)) scale(${-parts['p-pant'].s}, ${parts['p-pant'].s}) rotate(${-parts['p-pant'].r}deg)`;
+                return;
+            }
+            render(selectedId);
+        }
+
+        function eyeDist(val) {
+            eyeSpacing += val;
+            document.getElementById('eye-l').style.left = eyeSpacing + "px";
+            document.getElementById('eye-r').style.right = eyeSpacing + "px";
+        }
+
+        function updateColor(val) {
+            parts[selectedId].col = val;
+            if (selectedId === 'p-head') {
+                document.getElementById('p-head').style.backgroundColor = val;
+                document.getElementById('p-foot-l').style.backgroundColor = val;
+                document.getElementById('p-foot-r').style.backgroundColor = val;
+                document.getElementById('p-arm-l').style.backgroundColor = val;
+                document.getElementById('p-arm-r').style.backgroundColor = val;
+            } else if (selectedId === 'p-pant') {
+                document.getElementById('p-pant-l').style.backgroundColor = val;
+                document.getElementById('p-pant-r').style.backgroundColor = val;
+            } else if (selectedId === 'p-body') {
+                document.getElementById('p-body').style.backgroundColor = val;
+                document.getElementById('p-sleeve-l').style.backgroundColor = val;
+                document.getElementById('p-sleeve-r').style.backgroundColor = val;
+            } else if (selectedId === 'p-hair') {
+                document.getElementById('p-hair').style.backgroundColor = val;
+            } else if (selectedId === 'p-shading') {
+                document.getElementById('p-shading').style.backgroundColor = val;
+            } else {
+                const el = document.getElementById(selectedId);
+                if(el) el.style.backgroundColor = val;
+            }
+            syncSwatches();
+        }
+
+        function chooseSwatch(val, btn) {
+            if (!parts[selectedId].col) return;
+            updateColor(val);
+            document.getElementById('color-wheel').value = val;
+            syncSwatches();
+        }
+
+        function syncSwatches() {
+            const group = paletteGroups[selectedId];
+            const currentColor = parts[selectedId].col;
+            swatchPanel.querySelectorAll('.swatch-btn').forEach((btn, index) => {
+                const color = group?.swatches?.[index] || '#cccccc';
+                btn.style.background = color;
+                btn.dataset.swatch = color;
+                btn.style.display = group ? 'block' : 'none';
+                btn.classList.toggle('active', currentColor === color);
+            });
+        }
+
+        function renderOptionGrid() {
+            const group = paletteGroups[selectedId];
+            optionTitle.textContent = group ? group.title : 'Options';
+            optionGrid.innerHTML = '';
+            if (!group) return;
+            group.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = 'option-btn';
+                if (selectedOptions[selectedId] === index) button.classList.add('active');
+                button.innerHTML = option.preview;
+                button.onclick = () => {
+                    selectedOptions[selectedId] = index;
+                    option.apply();
+                    renderOptionGrid();
+                };
+                optionGrid.appendChild(button);
+            });
+        }
+
+        function applyCurrentSelections() {
+            Object.keys(paletteGroups).forEach((id) => {
+                const option = paletteGroups[id].options[selectedOptions[id]];
+                if (option) option.apply();
+            });
+        }
+
+        function renderAll() {
+            ['p-hair', 'eye-group', 'p-head', 'p-body', 'p-shading', 'p-mouth'].forEach(render);
+        }
+
+        function setEyePreset(preset) {
+            eyeSpacing = preset.spacing;
+            parts['eye-group'].y = preset.y;
+            render('eye-group');
+            const leftEye = document.getElementById('eye-l');
+            const rightEye = document.getElementById('eye-r');
+            leftEye.style.width = preset.width + "px";
+            rightEye.style.width = preset.width + "px";
+            leftEye.style.top = preset.top + "px";
+            rightEye.style.top = preset.top + "px";
+            leftEye.style.left = eyeSpacing + "px";
+            rightEye.style.right = eyeSpacing + "px";
+            leftEye.style.transform = `scaleY(${preset.scaleY}) rotate(${preset.tilt}deg)`;
+            rightEye.style.transform = `scaleX(-1) scaleY(${preset.scaleY}) rotate(${-preset.tilt}deg)`;
+        }
+
+        function setNosePreset(preset) {
+            const nose = document.getElementById('p-shading');
+            parts['p-shading'].x = preset.x;
+            parts['p-shading'].y = preset.y;
+            parts['p-shading'].sx = preset.sx;
+            parts['p-shading'].sy = preset.sy;
+            parts['p-shading'].r = preset.r;
+            nose.style.width = preset.width + "px";
+            nose.style.height = preset.height + "px";
+            nose.style.opacity = preset.opacity;
+            render('p-shading');
+        }
+
+        function setMouthPreset(preset) {
+            const mouth = document.getElementById('p-mouth');
+            parts['p-mouth'].x = preset.x;
+            parts['p-mouth'].y = preset.y;
+            parts['p-mouth'].sx = preset.sx;
+            parts['p-mouth'].sy = preset.sy;
+            parts['p-mouth'].r = preset.r;
+            mouth.style.width = preset.width + "px";
+            render('p-mouth');
+        }
+
+        function setBodyPreset(preset) {
+            const body = document.getElementById('p-body');
+            const sleeveL = document.getElementById('p-sleeve-l');
+            const sleeveR = document.getElementById('p-sleeve-r');
+            const armL = document.getElementById('p-arm-l');
+            const armR = document.getElementById('p-arm-r');
+            body.style.width = preset.width + "px";
+            body.style.height = preset.height + "px";
+            parts['p-body'].y = preset.y;
+            sleeveL.style.width = preset.sleeveWidth + "px";
+            sleeveR.style.width = preset.sleeveWidth + "px";
+            sleeveL.style.height = `${preset.sleeveHeight ?? 62}px`;
+            sleeveR.style.height = `${preset.sleeveHeight ?? 62}px`;
+            sleeveL.style.top = preset.sleeveY + "px";
+            sleeveR.style.top = preset.sleeveY + "px";
+            sleeveL.style.marginLeft = `${-preset.sleeveOffset}px`;
+            sleeveR.style.marginLeft = `${preset.sleeveOffset}px`;
+            sleeveL.style.transform = `translateX(-50%) rotate(${preset.sleeveAngle ?? 0}deg)`;
+            sleeveR.style.transform = `translateX(-50%) scaleX(-1) rotate(${-(preset.sleeveAngle ?? 0)}deg)`;
+            armL.style.width = `${preset.armWidth ?? 38}px`;
+            armR.style.width = `${preset.armWidth ?? 38}px`;
+            armL.style.height = `${preset.armHeight ?? 20}px`;
+            armR.style.height = `${preset.armHeight ?? 20}px`;
+            armL.style.top = `${preset.armY}px`;
+            armR.style.top = `${preset.armY}px`;
+            armL.style.marginLeft = `${-preset.armOffset}px`;
+            armR.style.marginLeft = `${preset.armOffset}px`;
+            armL.style.transform = `translateX(-50%) rotate(${preset.armAngle ?? 0}deg)`;
+            armR.style.transform = `translateX(-50%) scaleX(-1) rotate(${-(preset.armAngle ?? 0)}deg)`;
+            render('p-body');
+        }
+
+        function setPantPreset(preset) {
+            const pantL = document.getElementById('p-pant-l');
+            const pantR = document.getElementById('p-pant-r');
+            const footL = document.getElementById('p-foot-l');
+            const footR = document.getElementById('p-foot-r');
+            pantL.style.width = preset.width + "px";
+            pantR.style.width = preset.width + "px";
+            pantL.style.height = preset.height + "px";
+            pantR.style.height = preset.height + "px";
+            pantL.style.bottom = `${preset.bottom ?? 42}px`;
+            pantR.style.bottom = `${preset.bottom ?? 42}px`;
+            pantL.style.marginLeft = `${-preset.offset}px`;
+            pantR.style.marginLeft = `${preset.offset}px`;
+            footL.style.width = `${preset.footWidth ?? 76}px`;
+            footR.style.width = `${preset.footWidth ?? 76}px`;
+            footL.style.height = `${preset.footHeight ?? 24}px`;
+            footR.style.height = `${preset.footHeight ?? 24}px`;
+            footL.style.bottom = `${preset.footBottom ?? 18}px`;
+            footR.style.bottom = `${preset.footBottom ?? 18}px`;
+            footL.style.marginLeft = `${-preset.footOffset}px`;
+            footR.style.marginLeft = `${preset.footOffset}px`;
+            pantL.style.transform = `translateX(calc(-50% + ${parts['p-pant'].x}px)) scale(${parts['p-pant'].s}) rotate(${parts['p-pant'].r}deg)`;
+            pantR.style.transform = `translateX(calc(-50% + ${parts['p-pant'].x}px)) scale(${-parts['p-pant'].s}, ${parts['p-pant'].s}) rotate(${-parts['p-pant'].r}deg)`;
+        }
+
+        function render(id) {
+            const d = parts[id];
+            const el = document.getElementById(id);
+            if(!el) return;
+            el.style.top = d.y + "px";
+            el.style.transform = `translateX(calc(-50% + ${d.x}px)) scale(${d.s * (d.sx ?? 1)}, ${d.s * (d.sy ?? 1)}) rotate(${d.r}deg)`;
+        }
+    </script>
+</body>
+</html>
