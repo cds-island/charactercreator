@@ -2,484 +2,1577 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Character Creator - Final Lux Build</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mii Maker Style Creator</title>
     <style>
-        :root { --ui-blue: #7ba1e3; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #5a81c3; font-family: sans-serif; }
-        
-        .bg {
-            position: fixed; width: 200%; height: 200%;
-            background-image: url('Background.png');
-            animation: scroll 40s linear infinite; z-index: 1; opacity: 0.6;
+        :root {
+            --sky: #86b4df;
+            --sky-deep: #507da8;
+            --panel: #f6f1de;
+            --panel-shadow: rgba(26, 43, 61, 0.2);
+            --line: #22425c;
+            --accent: #ef8b31;
+            --accent-soft: #ffd9aa;
+            --mint: #c7e7d5;
+            --stage-width: 390;
+            --stage-height: 560;
+            --stage-scale: min(1, calc((100vw - 48px) / var(--stage-width)), calc((100vh - 80px) / var(--stage-height)));
         }
-        @keyframes scroll { from { background-position: 0 0; } to { background-position: -800px -800px; } }
 
-        #overlay {
-            position: fixed; inset: 0; background: var(--ui-blue); z-index: 100;
-            display: flex; justify-content: center; align-items: center; cursor: pointer; color: white;
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            min-height: 100%;
+            background: linear-gradient(180deg, #9cc5ea 0%, #74a6d4 100%);
+            color: #183147;
+            font-family: "Trebuchet MS", "Verdana", sans-serif;
+            overflow-x: hidden;
         }
 
-        .main-ui { position: relative; z-index: 10; display: none; min-height: 100vh; justify-content: center; align-items: center; gap: 40px; padding: 24px; box-sizing: border-box; }
-
-        .stage { position: relative; width: 380px; height: 540px; }
-        .layer { position: absolute; left: 50%; transform: translateX(-50%); pointer-events: none; }
-        .mask { -webkit-mask-repeat: no-repeat; -webkit-mask-position: center; -webkit-mask-size: contain; }
-
-        /* Eye Group */
-        #eye-group { position: absolute; left: 50%; transform: translateX(-50%); width: 144px; height: 48px; z-index: 15; }
-        .eye-img { width: 30px; position: absolute; top: 0; transform-origin: center; }
-        #eye-r { transform: scaleX(-1); }
-
-        /* HUD */
-        .hud { background: rgba(241,247,250,0.96); padding: 18px; border-radius: 30px; width: 430px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); border: 5px solid white; }
-        .selector-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
-        .part-btn { height: 70px; border-radius: 18px; border: 5px solid #7f969b; cursor: pointer; background: linear-gradient(180deg, #d4e0e3, #b5c7cb); color: #32585b; font-weight: bold; font-size: 11px; text-transform: uppercase; display: flex; align-items: center; justify-content: center; padding: 8px; box-sizing: border-box; }
-        .part-btn.active { background: linear-gradient(180deg, #06b68c, #07926f); color: white; border-color: #74888d; }
-        .option-panel { width: 100%; background: linear-gradient(180deg, #e4edf0, #d8e3e7); border: 5px solid #93a8ac; border-radius: 28px; padding: 14px; box-sizing: border-box; }
-        .option-header { display: flex; gap: 10px; margin-bottom: 12px; }
-        .option-pill { flex: 1; height: 54px; border-radius: 18px; border: 5px solid #7f969b; background: linear-gradient(180deg, #d6e3e6, #bdd0d4); display: flex; align-items: center; justify-content: center; color: #45656b; font-weight: bold; text-transform: uppercase; font-size: 12px; }
-        .option-pill.active { background: linear-gradient(180deg, #09b88e, #089973); color: white; }
-        .option-layout { display: grid; grid-template-columns: 1.3fr 0.9fr; gap: 12px; }
-        .option-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .option-btn { min-height: 102px; border-radius: 22px; border: 5px solid #7f969b; background: linear-gradient(180deg, #ffffff, #f1f5f6); cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
-        .option-btn.active { background: linear-gradient(180deg, #86f3c5, #1de593); }
-        .option-sprite { width: 74px; height: 64px; object-fit: contain; image-rendering: pixelated; }
-        .swatch-panel { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; align-content: start; }
-        .swatch-btn { height: 72px; border-radius: 20px; border: 5px solid #7f969b; cursor: pointer; }
-        .swatch-btn.active { border-color: #0ec291; box-shadow: inset 0 0 0 4px rgba(255,255,255,0.85); }
-        #option-title { margin: 0 0 10px; color: #49656a; font-size: 14px; letter-spacing: 0.05em; text-transform: uppercase; }
-        
-        .control-panel { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-        .color-section { width: 100%; display: flex; align-items: center; justify-content: space-between; background: #eee; padding: 10px; border-radius: 15px; }
-        
-        .btn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
-        .icon-btn { 
-            width: 75px; height: 75px; border: none; cursor: pointer;
-            background: url('ButtonBlankSize.png') no-repeat center; background-size: contain;
-            display: flex; justify-content: center; align-items: center;
+        body::before {
+            content: "";
+            position: fixed;
+            inset: -30%;
+            background:
+                radial-gradient(circle at 20% 20%, rgba(255, 250, 233, 0.7), transparent 24%),
+                radial-gradient(circle at 80% 18%, rgba(255, 214, 153, 0.35), transparent 18%),
+                radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.35), transparent 24%);
+            pointer-events: none;
+            z-index: 0;
         }
-        .icon-btn img { width: 32px; }
-        .rot90 { transform: rotate(90deg); }
-        .rot-90 { transform: rotate(-90deg); }
 
-        @media (max-width: 900px) {
-            .main-ui { flex-direction: column; gap: 18px; }
-            .stage { width: 330px; height: 500px; }
-            .hud { width: min(430px, 100%); }
-            .option-layout { grid-template-columns: 1fr; }
-            .swatch-panel { grid-template-columns: repeat(3, 1fr); }
-            .icon-btn { width: 68px; height: 68px; }
+        .moving-bg {
+            position: fixed;
+            inset: -40%;
+            background: url("Background.png") center/480px repeat;
+            opacity: 0.26;
+            animation: drift 42s linear infinite;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        @keyframes drift {
+            from { transform: translate3d(0, 0, 0); }
+            to { transform: translate3d(-220px, -180px, 0); }
+        }
+
+        .start-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 20;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            background: linear-gradient(180deg, rgba(74, 122, 168, 0.93), rgba(51, 91, 131, 0.94));
+        }
+
+        .start-card {
+            width: min(720px, 100%);
+            background: linear-gradient(180deg, rgba(255, 248, 231, 0.98), rgba(247, 239, 215, 0.98));
+            border: 5px solid #fff;
+            border-radius: 36px;
+            padding: 28px;
+            box-shadow: 0 24px 56px rgba(12, 30, 47, 0.28);
+            display: grid;
+            gap: 18px;
+        }
+
+        .hero-row {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 18px;
+            align-items: center;
+        }
+
+        .hero-copy h1 {
+            margin: 0 0 10px;
+            font-size: clamp(2rem, 6vw, 3.4rem);
+            line-height: 0.95;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-family: "Arial Black", "Trebuchet MS", sans-serif;
+            color: #214664;
+        }
+
+        .hero-copy p {
+            margin: 0;
+            font-size: 1rem;
+            line-height: 1.45;
+            max-width: 42ch;
+        }
+
+        .hero-copy p,
+        #character-vibe,
+        #editor-subtitle,
+        #preset-help,
+        #tool-note,
+        #active-target,
+        .preset-label {
+            display: none !important;
+        }
+
+        .start-preview {
+            min-height: 210px;
+            border-radius: 28px;
+            border: 4px solid #d9ecf5;
+            background:
+                radial-gradient(circle at 50% 20%, rgba(255,255,255,0.7), transparent 40%),
+                linear-gradient(180deg, #8cc0e9 0%, #6f9fca 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .start-preview .preview-head,
+        .start-preview .preview-hair,
+        .start-preview .preview-eye,
+        .start-preview .preview-mouth {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #f0c8a0;
+            mask-repeat: no-repeat;
+            mask-position: center;
+            mask-size: contain;
+            -webkit-mask-repeat: no-repeat;
+            -webkit-mask-position: center;
+            -webkit-mask-size: contain;
+        }
+
+        .start-preview .preview-head {
+            width: 120px;
+            height: 110px;
+            top: 40px;
+            background: #daaa73;
+            mask-image: url("head.png");
+            -webkit-mask-image: url("head.png");
+        }
+
+        .start-preview .preview-hair {
+            width: 180px;
+            height: 160px;
+            top: 8px;
+            background: #3d2d15;
+            mask-image: url("hair.png");
+            -webkit-mask-image: url("hair.png");
+        }
+
+        .start-preview .preview-eye.left,
+        .start-preview .preview-eye.right {
+            width: 32px;
+            height: 38px;
+            top: 82px;
+            background: url("eye.png") center/contain no-repeat;
+        }
+
+        .start-preview .preview-eye.left { margin-left: -23px; }
+        .start-preview .preview-eye.right { margin-left: 23px; transform: translateX(-50%) scaleX(-1); }
+
+        .start-preview .preview-mouth {
+            width: 22px;
+            height: 16px;
+            top: 118px;
+            background: #000;
+            mask-image: url("Mouth.png");
+            -webkit-mask-image: url("Mouth.png");
+        }
+
+        .start-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .primary-btn,
+        .ghost-btn,
+        .tab-btn,
+        .preset-btn,
+        .swatch-btn,
+        .tool-btn,
+        .mini-btn {
+            border: 0;
+            cursor: pointer;
+            font: inherit;
+            color: inherit;
+        }
+
+        .primary-btn,
+        .ghost-btn {
+            min-height: 58px;
+            padding: 0 22px;
+            border-radius: 999px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .primary-btn {
+            background: linear-gradient(180deg, #ef9b43, #d96e1f);
+            color: #fff8ef;
+            box-shadow: inset 0 -4px 0 rgba(130, 53, 16, 0.22);
+        }
+
+        .ghost-btn {
+            background: #dbe9f3;
+            color: #214664;
+        }
+
+        .app {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: none;
+            padding: 18px;
+        }
+
+        .layout {
+            width: min(1320px, 100%);
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: minmax(320px, 430px) minmax(320px, 1fr);
+            gap: 22px;
+            align-items: start;
+        }
+
+        .panel {
+            background: linear-gradient(180deg, rgba(249, 245, 229, 0.98), rgba(241, 234, 210, 0.98));
+            border: 5px solid #fff;
+            border-radius: 34px;
+            box-shadow: 0 22px 52px var(--panel-shadow);
+        }
+
+        .stage-panel {
+            padding: 20px;
+            position: sticky;
+            top: 18px;
+        }
+
+        .stage-topbar,
+        .editor-topbar {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .title-stack h2,
+        .title-stack p,
+        .editor-heading h3,
+        .editor-heading p {
+            margin: 0;
+        }
+
+        .title-stack h2,
+        .editor-heading h3 {
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-family: "Arial Black", "Trebuchet MS", sans-serif;
+        }
+
+        .title-stack p,
+        .editor-heading p {
+            color: #4a667d;
+            font-size: 0.95rem;
+        }
+
+        .topbar-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .mini-btn {
+            min-height: 42px;
+            padding: 0 14px;
+            border-radius: 999px;
+            background: #dceaf3;
+            color: #23455f;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .mini-btn.active {
+            background: linear-gradient(180deg, #ef9b43, #d96e1f);
+            color: #fff8ef;
+        }
+
+        .stage-wrap {
+            border-radius: 30px;
+            padding: 18px;
+            background:
+                radial-gradient(circle at 50% 10%, rgba(255,255,255,0.74), transparent 35%),
+                linear-gradient(180deg, #7db4dc 0%, #6e9fc8 100%);
+            border: 4px solid #d7ebf7;
+            overflow: hidden;
+        }
+
+        .stage-shell {
+            width: calc(var(--stage-width) * 1px * var(--stage-scale));
+            height: calc(var(--stage-height) * 1px * var(--stage-scale));
+            margin: 0 auto;
+            display: grid;
+            place-items: center;
+        }
+
+        .stage {
+            width: calc(var(--stage-width) * 1px);
+            height: calc(var(--stage-height) * 1px);
+            transform: scale(var(--stage-scale));
+            transform-origin: center;
+            position: relative;
+            image-rendering: pixelated;
+            filter: drop-shadow(0 20px 30px rgba(25, 50, 78, 0.18));
+        }
+
+        .shadow-disc {
+            position: absolute;
+            left: 50%;
+            bottom: 40px;
+            width: 158px;
+            height: 28px;
+            transform: translateX(-50%);
+            border-radius: 50%;
+            background: rgba(34, 66, 92, 0.18);
+            filter: blur(4px);
+        }
+
+        .avatar-part {
+            position: absolute;
+            left: 50%;
+            transform-origin: center;
+            pointer-events: none;
+        }
+
+        #eye-left,
+        #eye-right {
+            background: url("eye.png") center/contain no-repeat;
+        }
+
+        .mask-part {
+            mask-repeat: no-repeat;
+            mask-position: center;
+            mask-size: contain;
+            -webkit-mask-repeat: no-repeat;
+            -webkit-mask-position: center;
+            -webkit-mask-size: contain;
+        }
+
+        .stat-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .stat-chip {
+            background: #fffaf0;
+            border: 3px solid #d8e8f1;
+            border-radius: 20px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .stat-chip strong,
+        .stat-chip span {
+            display: block;
+        }
+
+        .stat-chip strong {
+            font-size: 0.78rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: #547089;
+            margin-bottom: 4px;
+        }
+
+        .stat-chip span {
+            font-weight: 700;
+        }
+
+        .editor-panel {
+            padding: 20px;
+            display: grid;
+            gap: 14px;
+        }
+
+        .tab-row {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+        }
+
+        .tab-btn {
+            min-height: 70px;
+            border-radius: 24px;
+            background: linear-gradient(180deg, #dce9f3, #c7dae8);
+            border: 3px solid transparent;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: #2a4a62;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(180deg, #ffd48a, #f2a449);
+            border-color: rgba(255,255,255,0.7);
+            color: #553111;
+        }
+
+        .editor-grid {
+            display: grid;
+            grid-template-columns: minmax(260px, 1fr) 290px;
+            gap: 14px;
+        }
+
+        .card {
+            background: rgba(255, 252, 243, 0.82);
+            border: 3px solid #dbe8f0;
+            border-radius: 26px;
+            padding: 16px;
+        }
+
+        .section-title {
+            margin: 0 0 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #34546d;
+            font-size: 0.9rem;
+        }
+
+        .preset-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(116px, 1fr));
+            gap: 10px;
+        }
+
+        .preset-btn {
+            min-height: 112px;
+            border-radius: 22px;
+            background: #fffdf7;
+            border: 3px solid #d7e8f2;
+            padding: 10px;
+            display: grid;
+            place-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .preset-btn.active {
+            border-color: #f0a042;
+            box-shadow: inset 0 0 0 2px rgba(255,255,255,0.9);
+            background: linear-gradient(180deg, #fff8e8, #ffedcc);
+        }
+
+        .preset-label {
+            position: absolute;
+            left: 10px;
+            bottom: 8px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #4b667d;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .preview-mask {
+            background: currentColor;
+            mask-repeat: no-repeat;
+            mask-position: center;
+            mask-size: contain;
+            -webkit-mask-repeat: no-repeat;
+            -webkit-mask-position: center;
+            -webkit-mask-size: contain;
+        }
+
+        .preview-face {
+            width: 58px;
+            height: 52px;
+            color: #f0c8a0;
+            mask-image: url("head.png");
+            -webkit-mask-image: url("head.png");
+        }
+
+        .preview-hair {
+            width: 80px;
+            height: 70px;
+            color: #5d3b1d;
+            mask-image: url("hair.png");
+            -webkit-mask-image: url("hair.png");
+        }
+
+        .preview-eye {
+            width: 34px;
+            height: 41px;
+            background: url("eye.png") center/contain no-repeat;
+            mask-image: none;
+            -webkit-mask-image: none;
+        }
+
+        .preview-nose {
+            width: 28px;
+            height: 18px;
+            color: #a57e5a;
+            mask-image: url("shading.png");
+            -webkit-mask-image: url("shading.png");
+        }
+
+        .preview-mouth {
+            width: 28px;
+            height: 18px;
+            color: #2b1b19;
+            mask-image: url("Mouth.png");
+            -webkit-mask-image: url("Mouth.png");
+        }
+
+        .preview-shirt {
+            width: 70px;
+            height: 82px;
+            color: #f06fe2;
+            mask-image: url("Body.png");
+            -webkit-mask-image: url("Body.png");
+        }
+
+        .preview-pants {
+            width: 48px;
+            height: 62px;
+            color: #7b8be9;
+            mask-image: url("PantLeg.png");
+            -webkit-mask-image: url("PantLeg.png");
+        }
+
+        .swatch-group {
+            display: grid;
+            gap: 10px;
+        }
+
+        .swatch-strip {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(48px, 1fr));
+            gap: 10px;
+        }
+
+        .swatch-btn {
+            min-height: 48px;
+            border-radius: 16px;
+            border: 3px solid #d8e8f1;
+            position: relative;
+        }
+
+        .swatch-btn.active::after {
+            content: "";
+            position: absolute;
+            inset: 8px;
+            border: 3px solid rgba(255,255,255,0.92);
+            border-radius: 10px;
+        }
+
+        .custom-color {
+            display: grid;
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .custom-color label {
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #537089;
+            font-weight: 700;
+        }
+
+        .custom-color input {
+            width: 100%;
+            height: 50px;
+            border: 0;
+            padding: 0;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        .tool-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .tool-btn {
+            min-height: 72px;
+            background: url("ButtonBlankSize.png") center/contain no-repeat;
+            display: grid;
+            place-items: center;
+            padding: 10px;
+        }
+
+        .tool-btn img {
+            max-width: 52px;
+            max-height: 34px;
+            image-rendering: pixelated;
+        }
+
+        .tool-btn span {
+            font-size: 0.76rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #284760;
+        }
+
+        .tool-btn .rot-left { transform: rotate(-90deg); }
+        .tool-btn .rot-right { transform: rotate(90deg); }
+
+        .tool-meta {
+            margin-top: 12px;
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .tool-meta span {
+            font-size: 0.82rem;
+            color: #527089;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+        }
+
+        .status-pill {
+            background: #dce9f3;
+            border-radius: 999px;
+            padding: 7px 12px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .legend {
+            margin-top: 10px;
+            color: #4d687e;
+            font-size: 0.9rem;
+            line-height: 1.45;
+        }
+
+        @media (max-width: 1120px) {
+            .layout,
+            .editor-grid,
+            .hero-row {
+                grid-template-columns: 1fr;
+            }
+
+            .stage-panel {
+                position: static;
+            }
+        }
+
+        @media (max-width: 860px) {
+            .tab-row {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            :root {
+                --stage-scale: min(0.88, calc((100vw - 34px) / var(--stage-width)), calc((100vh - 180px) / var(--stage-height)));
+            }
+
+            .app { padding: 12px; }
+            .panel { border-radius: 28px; }
+            .stage-panel,
+            .editor-panel,
+            .start-card { padding: 16px; }
+            .tab-row { gap: 8px; }
+            .tab-btn { min-height: 62px; font-size: 0.82rem; }
+            .tool-grid { grid-template-columns: repeat(4, 1fr); }
         }
     </style>
 </head>
 <body>
+    <div class="moving-bg" aria-hidden="true"></div>
 
-    <div class="bg"></div>
-
-    <div id="overlay" onclick="start()"><h1>CLICK TO START</h1></div>
-
-    <div class="main-ui" id="ui">
-        <div class="stage">
-            <div id="p-foot-l" class="layer mask" style="width:63px; height:16px; bottom:100px; margin-left:-19px; z-index:1; -webkit-mask-image:url('Foot.png'); background-color:#f3d2b3;"></div>
-            <div id="p-foot-r" class="layer mask" style="width:63px; height:16px; bottom:100px; margin-left:19px; z-index:1; -webkit-mask-image:url('Foot.png'); background-color:#f3d2b3; transform: translateX(-50%) scaleX(-1);"></div>
-            <div id="p-pant-l" class="layer mask" style="width:56px; height:49px; bottom:118px; margin-left:-13px; z-index:2; -webkit-mask-image:url('PantLeg.png'); background-color:#7b8be9;"></div>
-            <div id="p-pant-r" class="layer mask" style="width:56px; height:49px; bottom:118px; margin-left:13px; z-index:2; -webkit-mask-image:url('PantLeg.png'); background-color:#7b8be9; transform: translateX(-50%) scaleX(-1);"></div>
-            
-            <div id="p-arm-l" class="layer mask" style="width:44px; height:35px; top:343px; margin-left:-69px; z-index:3; -webkit-mask-image:url('Arm.png'); background-color:#f3d2b3; transform: translateX(-50%) rotate(0deg);"></div>
-            <div id="p-arm-r" class="layer mask" style="width:44px; height:35px; top:343px; margin-left:69px; z-index:3; -webkit-mask-image:url('Arm.png'); background-color:#f3d2b3; transform: translateX(-50%) scaleX(-1) rotate(0deg);"></div>
-            <div id="p-sleeve-l" class="layer mask" style="width:38px; height:69px; top:294px; margin-left:-45px; z-index:4; -webkit-mask-image:url('Sleve.png'); background-color:#f06fe2; transform: translateX(-50%) rotate(10deg);"></div>
-            <div id="p-sleeve-r" class="layer mask" style="width:38px; height:69px; top:294px; margin-left:45px; z-index:4; -webkit-mask-image:url('Sleve.png'); background-color:#f06fe2; transform: translateX(-50%) scaleX(-1) rotate(-10deg);"></div>
-            <div id="p-body" class="layer mask" style="width:84px; height:102px; top:281px; z-index:5; -webkit-mask-image:url('Body.png'); background-color:#f06fe2;"></div>
-            
-            <div id="p-head" class="layer mask" style="width:138px; height:129px; top:146px; z-index:6; -webkit-mask-image:url('head.png'); background-color:#f3d2b3;"></div>
-            
-            <div id="p-shading" class="layer mask" style="width:27px; height:14px; top:221px; z-index:17; -webkit-mask-image:url('shading.png'); background-color:#b48a61;"></div>
-            
-            <div id="eye-group" style="top:189px;">
-                <img src="eye.png" class="eye-img" id="eye-l" style="left: 22px; width:44px; top:0;">
-                <img src="eye.png" class="eye-img" id="eye-r" style="right: 22px; width:44px; top:0;">
+    <section class="start-screen" id="start-screen">
+        <div class="start-card">
+            <div class="hero-row">
+                <div class="hero-copy">
+                    <h1>Studio Maker</h1>
+                    <p>Build a playful Mii-style character from the repo's sprite parts. Shape the face, tune the eyes, swap outfit silhouettes, and nudge features until the little gremlin feels right.</p>
+                </div>
+                <div class="start-preview" aria-hidden="true">
+                    <div class="preview-head"></div>
+                    <div class="preview-hair"></div>
+                    <div class="preview-eye left"></div>
+                    <div class="preview-eye right"></div>
+                    <div class="preview-mouth"></div>
+                </div>
             </div>
-            
-            <img id="p-mouth" src="Mouth.png" class="layer" style="width:22px; top:244px; z-index:16;">
-            <div id="p-hair" class="layer mask" style="width:216px; height:202px; top:94px; z-index:20; -webkit-mask-image:url('hair.png'); background-color:#5a3d1a;"></div>
+            <div class="start-actions">
+                <button class="primary-btn" id="enter-btn">Start Building</button>
+                <button class="ghost-btn" id="randomize-start-btn">Random Character</button>
+            </div>
         </div>
+    </section>
 
-        <div class="hud">
-            <div class="selector-grid">
-                <button class="part-btn active" onclick="selectPart('p-hair', this)">Hair</button>
-                <button class="part-btn" onclick="selectPart('eye-group', this)">Eyes</button>
-                <button class="part-btn" onclick="selectPart('p-head', this)">Skin</button>
-                <button class="part-btn" onclick="selectPart('p-body', this)">Shirt</button>
-                <button class="part-btn" onclick="selectPart('p-pant', this)">Pants</button>
-                <button class="part-btn" onclick="selectPart('p-shading', this)">Nose</button>
-                <button class="part-btn" onclick="selectPart('p-mouth', this)">Mouth</button>
-            </div>
-
-            <div class="control-panel">
-                <div class="option-panel">
-                    <div class="option-header">
-                        <div class="option-pill active">Styles</div>
-                        <div class="option-pill">Colors</div>
+    <main class="app" id="app">
+        <div class="layout">
+            <section class="panel stage-panel">
+                <div class="stage-topbar">
+                    <div class="title-stack">
+                        <h2 id="character-name">TEST</h2>
+                        <p id="character-vibe"></p>
                     </div>
-                    <div class="option-layout">
-                        <div>
-                            <h3 id="option-title">Hair Styles</h3>
-                            <div class="option-grid" id="option-grid"></div>
-                        </div>
-                        <div class="swatch-panel" id="swatch-panel">
-                            <button class="swatch-btn" data-swatch="#f3d2b3" style="background:#f3d2b3;" onclick="chooseSwatch('#f3d2b3', this)"></button>
-                            <button class="swatch-btn" data-swatch="#ffd9bd" style="background:#ffd9bd;" onclick="chooseSwatch('#ffd9bd', this)"></button>
-                            <button class="swatch-btn" data-swatch="#ffc477" style="background:#ffc477;" onclick="chooseSwatch('#ffc477', this)"></button>
-                            <button class="swatch-btn" data-swatch="#5a3d1a" style="background:#5a3d1a;" onclick="chooseSwatch('#5a3d1a', this)"></button>
-                            <button class="swatch-btn" data-swatch="#f06fe2" style="background:#f06fe2;" onclick="chooseSwatch('#f06fe2', this)"></button>
-                            <button class="swatch-btn" data-swatch="#7b8be9" style="background:#7b8be9;" onclick="chooseSwatch('#7b8be9', this)"></button>
-                        </div>
+                    <div class="topbar-actions">
+                        <button class="mini-btn" id="randomize-btn">Randomize</button>
+                        <button class="mini-btn" id="reset-btn">Reset</button>
+                        <button class="mini-btn" id="music-btn">Music Off</button>
                     </div>
                 </div>
 
-                <div class="color-section">
-                    <label style="font-weight:bold; color:var(--ui-blue)">COLOR</label>
-                    <input type="color" id="color-wheel" oninput="updateColor(this.value)">
+                <div class="stage-wrap">
+                    <div class="stage-shell">
+                        <div class="stage" id="stage">
+                            <div class="shadow-disc"></div>
+
+                            <div id="foot-left" class="avatar-part mask-part"></div>
+                            <div id="foot-right" class="avatar-part mask-part"></div>
+                            <div id="pant-left" class="avatar-part mask-part"></div>
+                            <div id="pant-right" class="avatar-part mask-part"></div>
+
+                            <div id="arm-left" class="avatar-part mask-part"></div>
+                            <div id="arm-right" class="avatar-part mask-part"></div>
+                            <div id="sleeve-left" class="avatar-part mask-part"></div>
+                            <div id="sleeve-right" class="avatar-part mask-part"></div>
+                            <div id="body" class="avatar-part mask-part"></div>
+
+                            <div id="head" class="avatar-part mask-part"></div>
+                            <div id="nose" class="avatar-part mask-part"></div>
+                            <div id="eyes" class="avatar-part">
+                                <div id="eye-left" class="avatar-part mask-part"></div>
+                                <div id="eye-right" class="avatar-part mask-part"></div>
+                            </div>
+                            <div id="mouth" class="avatar-part mask-part"></div>
+                            <div id="hair" class="avatar-part mask-part"></div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="btn-grid">
-                    <button class="icon-btn" onclick="modify('y', -5)"><img src="UArrowSymbol.png"></button>
-                    <button class="icon-btn" onclick="modify('s', 0.05)"><img src="LargenSymbol.png"></button>
-                    <button class="icon-btn" onclick="modify('r', -10)"><img src="RotateSymbolL.png"></button>
-                    <button class="icon-btn" onclick="eyeDist(2)"><img src="WidenSymbol.png" alt="Widen"></button>
-                    
-                    <button class="icon-btn" onclick="modify('y', 5)"><img src="DArrowSymbol.png"></button>
-                    <button class="icon-btn" onclick="modify('s', -0.05)"><img src="ShrinkenSymbol.png"></button>
-                    <button class="icon-btn" onclick="modify('r', 10)"><img src="RotateSymbolR.png"></button>
-                    <button class="icon-btn" onclick="eyeDist(-2)"><img src="NarrowSymbol.png" alt="Narrow"></button>
-                    
-                    <button class="icon-btn" onclick="modify('x', -5)"><img src="UArrowSymbol.png" class="rot-90"></button>
-                    <div style="grid-column: span 2; display:flex; align-items:center; justify-content:center; font-weight:bold; color:var(--ui-blue); font-size:12px;">ADJUST</div>
-                    <button class="icon-btn" onclick="modify('x', 5)"><img src="UArrowSymbol.png" class="rot90"></button>
+                <div class="stat-row">
+                    <div class="stat-chip">
+                        <strong>Face</strong>
+                        <span id="face-stat">Default</span>
+                    </div>
+                    <div class="stat-chip">
+                        <strong>Eyes</strong>
+                        <span id="eye-stat">Default</span>
+                    </div>
+                    <div class="stat-chip">
+                        <strong>Outfit</strong>
+                        <span id="outfit-stat">Default</span>
+                    </div>
                 </div>
-            </div>
+            </section>
+
+            <section class="panel editor-panel">
+                <div class="editor-topbar">
+                    <div class="editor-heading">
+                        <h3 id="editor-title">Face Studio</h3>
+                        <p id="editor-subtitle">Choose a base shape and tone, then fine-tune with the pad.</p>
+                    </div>
+                    <div class="status-pill" id="active-target">Editing Face</div>
+                </div>
+
+                <div class="tab-row" id="tab-row"></div>
+
+                <div class="editor-grid">
+                    <div class="card">
+                        <h4 class="section-title" id="preset-title">Presets</h4>
+                        <div class="preset-grid" id="preset-grid"></div>
+                        <div class="legend" id="preset-help"></div>
+                    </div>
+
+                    <div class="card">
+                        <h4 class="section-title">Colors</h4>
+                        <div class="swatch-group" id="swatch-group"></div>
+                        <div class="custom-color">
+                            <label for="custom-color">Dial in a custom color</label>
+                            <input type="color" id="custom-color" value="#f0c8a0">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h4 class="section-title">Adjust</h4>
+                    <div class="tool-grid">
+                        <button class="tool-btn" data-action="y:-4"><img src="UArrowSymbol.png" alt="Move up"></button>
+                        <button class="tool-btn" data-action="scale:0.04"><img src="LargenSymbol.png" alt="Grow"></button>
+                        <button class="tool-btn" data-action="rotate:-8"><img src="RotateSymbolL.png" alt="Rotate left"></button>
+                        <button class="tool-btn" data-action="spacing:2"><img src="WidenSymbol.png" alt="Widen"></button>
+
+                        <button class="tool-btn" data-action="y:4"><img src="DArrowSymbol.png" alt="Move down"></button>
+                        <button class="tool-btn" data-action="scale:-0.04"><img src="ShrinkenSymbol.png" alt="Shrink"></button>
+                        <button class="tool-btn" data-action="rotate:8"><img src="RotateSymbolR.png" alt="Rotate right"></button>
+                        <button class="tool-btn" data-action="spacing:-2"><img src="NarrowSymbol.png" alt="Narrow"></button>
+
+                        <button class="tool-btn" data-action="x:-4"><img class="rot-left" src="UArrowSymbol.png" alt="Move left"></button>
+                        <button class="tool-btn" data-action="reset-adjustments"><span>Reset</span></button>
+                        <button class="tool-btn" data-action="x:4"><img class="rot-right" src="UArrowSymbol.png" alt="Move right"></button>
+                        <button class="tool-btn" data-action="mirror"><span>Flip</span></button>
+                    </div>
+                    <div class="tool-meta">
+                        <span id="tool-note">Face uses move, size, and tilt. Spacing applies to eye and mouth-heavy features.</span>
+                        <button class="mini-btn" id="snap-btn">Snap To Preset</button>
+                    </div>
+                </div>
+            </section>
         </div>
-    </div>
+    </main>
 
     <audio id="bgm" src="Music.mp3" loop></audio>
 
     <script>
-        const audio = document.getElementById('bgm');
-        let selectedId = 'p-hair';
-        let eyeSpacing = 30;
-        const optionGrid = document.getElementById('option-grid');
-        const optionTitle = document.getElementById('option-title');
-        const swatchPanel = document.getElementById('swatch-panel');
+        const $ = (id) => document.getElementById(id);
 
-        const parts = {
-            'p-hair':  { x: 0, y: 94, s: 1, sx: 1, sy: 1, r: 0, col: '#5a3d1a', maxS: 1.2 },
-            'eye-group': { x: 0, y: 189, s: 1, sx: 1, sy: 1, r: 0, col: null, maxS: 2.0 },
-            'p-head':  { x: 0, y: 146, s: 1, sx: 1, sy: 1, r: 0, col: '#f3d2b3', maxS: 1.12 },
-            'p-body':  { x: 0, y: 281, s: 1, sx: 1, sy: 1, r: 0, col: '#f06fe2', maxS: 1.35 },
-            'p-pant':  { x: 0, y: 0, s: 1, sx: 1, sy: 1, r: 0, col: '#7b8be9', maxS: 1.3 },
-            'p-shading': { x: 0, y: 221, s: 1, sx: 1, sy: 1, r: 0, col: '#b48a61', maxS: 1.4 },
-            'p-mouth': { x: 0, y: 244, s: 1, sx: 1, sy: 1, r: 0, col: null, maxS: 2.0 }
+        const categories = [
+            { id: "face", label: "Face", title: "Face Studio", subtitle: "Choose a base shape and tone, then fine-tune with the pad.", target: "face", colorKey: "skin" },
+            { id: "hair", label: "Hair", title: "Hair Salon", subtitle: "Push the hair mask into different silhouettes and pick a strong color.", target: "hair", colorKey: "hair" },
+            { id: "eyes", label: "Eyes", title: "Eye Booth", subtitle: "Spacing matters most here. Wider feels softer, tighter feels sharper.", target: "eyes", colorKey: "eyes" },
+            { id: "nose", label: "Nose", title: "Nose Desk", subtitle: "Keep it subtle or slide it around until it reads right against the face.", target: "nose", colorKey: "nose" },
+            { id: "mouth", label: "Mouth", title: "Mouth Mixer", subtitle: "Small changes change the mood fast. Try scale before rotation.", target: "mouth", colorKey: "mouth" },
+            { id: "outfit", label: "Outfit", title: "Outfit Rack", subtitle: "Swap torso and leg shapes, then lock in shirt and pants colors.", target: "body", colorKey: "shirt" }
+        ];
+
+        const palettes = {
+            skin: ["#daaa73", "#ffd9bd", "#ffc888", "#e8ae83", "#d18c63", "#8d5732"],
+            hair: ["#3d2d15", "#7b4e23", "#362417", "#120d0a", "#a14c2a", "#f06fe2"],
+            eyes: ["#ffffff"],
+            nose: ["#92724d", "#a67f59", "#805d41", "#f3d2b3", "#7f5d44", "#2c2c2c"],
+            mouth: ["#000000", "#5e3028", "#8e2d3c", "#c44f75", "#345d92", "#f06fe2"],
+            shirt: ["#ff86f7", "#f0a43a", "#26b4a7", "#df564e", "#7b8be9", "#364869"],
+            pants: ["#8798ff", "#5061bf", "#364869", "#7f5d44", "#2d2d2d", "#e59144"]
         };
 
-        const paletteGroups = {
-            'p-hair': {
-                title: 'Hair Styles',
-                swatches: ['#5a3d1a', '#7a4b1d', '#2f2216', '#a14c2a', '#f06fe2', '#7b8be9'],
-                options: [
-                    { preview: '<img class="option-sprite" src="hair.png" alt="Hair option 1">', apply: () => render('p-hair') },
-                    { preview: '<img class="option-sprite" src="hair.png" alt="Hair option 2">', apply: () => render('p-hair') },
-                    { preview: '<img class="option-sprite" src="hair.png" alt="Hair option 3">', apply: () => render('p-hair') },
-                    { preview: '<img class="option-sprite" src="hair.png" alt="Hair option 4">', apply: () => render('p-hair') }
-                ]
+        const basePresets = {
+            face: [
+                { name: "Default", x: 0, y: 146, scale: 1, stretchX: 1, stretchY: 1, rotate: 0 },
+                { name: "Tall", x: 0, y: 142, scale: 1, stretchX: 0.94, stretchY: 1.09, rotate: 0 },
+                { name: "Wide", x: 0, y: 150, scale: 1.03, stretchX: 1.08, stretchY: 0.95, rotate: 0 },
+                { name: "Tilted", x: 0, y: 145, scale: 1, stretchX: 0.98, stretchY: 1.02, rotate: -5 },
+                { name: "Compact", x: 0, y: 152, scale: 0.95, stretchX: 1, stretchY: 0.96, rotate: 0 },
+                { name: "Oval", x: 0, y: 141, scale: 1.02, stretchX: 0.97, stretchY: 1.08, rotate: 3 }
+            ],
+            hair: [
+                { name: "Default", x: 0, y: 76, scale: 1, stretchX: 1, stretchY: 1, rotate: 0 },
+                { name: "Sweep", x: 8, y: 74, scale: 1.02, stretchX: 1.02, stretchY: 0.96, rotate: -7 },
+                { name: "Tall Top", x: 0, y: 60, scale: 1.04, stretchX: 0.97, stretchY: 1.12, rotate: 0 },
+                { name: "Flared", x: 0, y: 83, scale: 1.04, stretchX: 1.14, stretchY: 0.97, rotate: 0 },
+                { name: "Lean", x: -6, y: 74, scale: 0.98, stretchX: 0.95, stretchY: 1.04, rotate: 8 },
+                { name: "Soft", x: 0, y: 86, scale: 0.96, stretchX: 1.02, stretchY: 0.95, rotate: 0 }
+            ],
+            eyes: [
+                { name: "Default", x: 0, y: 198, scale: 1, stretchX: 1, stretchY: 1, rotate: 0, spacing: 28 },
+                { name: "Wide", x: 0, y: 200, scale: 1.05, stretchX: 0.96, stretchY: 0.82, rotate: 0, spacing: 33 },
+                { name: "Sleepy", x: 0, y: 208, scale: 1, stretchX: 1.02, stretchY: 0.55, rotate: -6, spacing: 28 },
+                { name: "Sharp", x: 0, y: 200, scale: 0.97, stretchX: 0.88, stretchY: 0.6, rotate: 9, spacing: 26 },
+                { name: "Tiny", x: 0, y: 205, scale: 0.82, stretchX: 0.78, stretchY: 0.62, rotate: 0, spacing: 25 },
+                { name: "Hero", x: 0, y: 198, scale: 1.08, stretchX: 1.02, stretchY: 0.86, rotate: 0, spacing: 35 }
+            ],
+            nose: [
+                { name: "Default", x: 0, y: 224, scale: 1, stretchX: 1, stretchY: 1, rotate: 0, opacity: 0.72 },
+                { name: "Dot", x: 0, y: 225, scale: 0.88, stretchX: 0.82, stretchY: 0.82, rotate: 0, opacity: 0.84 },
+                { name: "Bridge", x: 0, y: 223, scale: 1.16, stretchX: 1.18, stretchY: 1.14, rotate: 0, opacity: 0.78 },
+                { name: "Tilt", x: 1, y: 225, scale: 1.06, stretchX: 1.06, stretchY: 1.1, rotate: 12, opacity: 0.78 },
+                { name: "Small", x: -1, y: 227, scale: 0.9, stretchX: 0.92, stretchY: 0.9, rotate: -8, opacity: 0.72 },
+                { name: "Bold", x: 0, y: 224, scale: 1.15, stretchX: 1.24, stretchY: 1.2, rotate: -3, opacity: 0.9 }
+            ],
+            mouth: [
+                { name: "Default", x: -12, y: 240, scale: 1, stretchX: 1, stretchY: 1, rotate: 0, spacing: 0 },
+                { name: "Flat", x: 0, y: 250, scale: 1.02, stretchX: 1.12, stretchY: 0.76, rotate: 0, spacing: 0 },
+                { name: "Tiny", x: 0, y: 253, scale: 0.86, stretchX: 0.88, stretchY: 0.8, rotate: 0, spacing: 0 },
+                { name: "Smirk", x: 1, y: 251, scale: 1, stretchX: 0.98, stretchY: 0.92, rotate: 8, spacing: 0 },
+                { name: "Ooh", x: 0, y: 251, scale: 0.92, stretchX: 0.82, stretchY: 1.12, rotate: 0, spacing: 0 },
+                { name: "Wide", x: 0, y: 251, scale: 1.04, stretchX: 1.22, stretchY: 0.94, rotate: 0, spacing: 0 }
+            ],
+            body: [
+                { name: "Default", x: 0, y: 286, scale: 1, stretchX: 1, stretchY: 1, rotate: 0, sleeveOffset: 44, sleeveY: 296, sleeveStretchX: 1, sleeveStretchY: 1, sleeveRotate: 10, armOffset: 67, armY: 344, armStretchX: 1, armStretchY: 1, armRotate: 0 },
+                { name: "Jacket", x: 0, y: 280, scale: 1.06, stretchX: 1.18, stretchY: 1.02, rotate: 0, sleeveOffset: 49, sleeveY: 293, sleeveStretchX: 1.12, sleeveStretchY: 1.04, sleeveRotate: 8, armOffset: 73, armY: 343, armStretchX: 1.08, armStretchY: 1.02, armRotate: 0 },
+                { name: "Trim", x: 0, y: 290, scale: 0.96, stretchX: 0.92, stretchY: 0.98, rotate: 0, sleeveOffset: 40, sleeveY: 300, sleeveStretchX: 0.92, sleeveStretchY: 0.94, sleeveRotate: 12, armOffset: 62, armY: 348, armStretchX: 0.94, armStretchY: 0.94, armRotate: 0 },
+                { name: "Cape", x: 0, y: 276, scale: 1.12, stretchX: 1.22, stretchY: 1.08, rotate: 0, sleeveOffset: 53, sleeveY: 291, sleeveStretchX: 1.18, sleeveStretchY: 1.08, sleeveRotate: 6, armOffset: 76, armY: 341, armStretchX: 1.08, armStretchY: 1.04, armRotate: 0 },
+                { name: "Short", x: 0, y: 292, scale: 0.94, stretchX: 1, stretchY: 0.92, rotate: 0, sleeveOffset: 42, sleeveY: 302, sleeveStretchX: 1, sleeveStretchY: 0.9, sleeveRotate: 14, armOffset: 64, armY: 350, armStretchX: 0.98, armStretchY: 0.92, armRotate: 0 },
+                { name: "Hero", x: 0, y: 281, scale: 1.08, stretchX: 1.08, stretchY: 1.05, rotate: 0, sleeveOffset: 47, sleeveY: 294, sleeveStretchX: 1.08, sleeveStretchY: 1.06, sleeveRotate: 10, armOffset: 71, armY: 343, armStretchX: 1.06, armStretchY: 1.04, armRotate: 0 }
+            ],
+            pants: [
+                { name: "Default", x: 0, y: 0, scale: 1, stretchX: 1, stretchY: 1, rotate: 0, legOffset: 13, legBottom: 120, footOffset: 19, footBottom: 100 },
+                { name: "Long", x: 0, y: -18, scale: 1.08, stretchX: 1.02, stretchY: 1.36, rotate: 0, legOffset: 14, legBottom: 138, footOffset: 20, footBottom: 96 },
+                { name: "Short", x: 0, y: 10, scale: 0.96, stretchX: 1.02, stretchY: 0.78, rotate: 0, legOffset: 12, legBottom: 110, footOffset: 18, footBottom: 103 },
+                { name: "Wide", x: 0, y: -4, scale: 1.06, stretchX: 1.2, stretchY: 1.08, rotate: 0, legOffset: 15, legBottom: 123, footOffset: 23, footBottom: 99 },
+                { name: "Lean", x: 0, y: -10, scale: 1.02, stretchX: 0.88, stretchY: 1.22, rotate: 0, legOffset: 11, legBottom: 128, footOffset: 18, footBottom: 97 },
+                { name: "Boot", x: 0, y: -6, scale: 1.08, stretchX: 1.08, stretchY: 1.14, rotate: 0, legOffset: 14, legBottom: 124, footOffset: 22, footBottom: 95 }
+            ]
+        };
+
+        const names = ["Lux", "Mint Pilot", "Pixel Mayor", "Soft Rogue", "Tiny Hero", "Cloud Walker"];
+        const vibes = [
+            "soft eyes, bright jacket, classic shape",
+            "sharp gaze, dark hair, compact silhouette",
+            "wide grin, loud colors, playful build",
+            "tilted smile, deep palette, taller frame",
+            "tiny features, quiet face, clean outfit",
+            "bold hair, hero eyes, stage-ready stance"
+        ];
+
+        const categoryToPresetKey = {
+            face: "face",
+            hair: "hair",
+            eyes: "eyes",
+            nose: "nose",
+            mouth: "mouth",
+            outfit: "body"
+        };
+
+        const defaultState = () => ({
+            activeCategory: "face",
+            musicOn: false,
+            colors: {
+                skin: palettes.skin[0],
+                hair: palettes.hair[0],
+                eyes: palettes.eyes[0],
+                nose: palettes.nose[0],
+                mouth: palettes.mouth[0],
+                shirt: palettes.shirt[0],
+                pants: palettes.pants[0]
             },
-            'p-head': {
-                title: 'Face Shapes',
-                swatches: ['#f3d2b3', '#ffd9bd', '#ffc477', '#e7ad86', '#f6b2a1', '#8c4f1d'],
-                options: [
-                    { preview: '<img class="option-sprite" src="head.png" alt="Face option 1">', apply: () => { Object.assign(parts['p-head'], { x: 0, y: 146, sx: 1, sy: 1, r: 0 }); render('p-head'); } },
-                    { preview: '<img class="option-sprite" src="head.png" alt="Face option 2">', apply: () => { Object.assign(parts['p-head'], { x: 0, y: 124, sx: 1.02, sy: 0.98, r: 0 }); render('p-head'); } },
-                    { preview: '<img class="option-sprite" src="head.png" alt="Face option 3">', apply: () => { Object.assign(parts['p-head'], { x: 0, y: 122, sx: 0.96, sy: 1.06, r: 0 }); render('p-head'); } },
-                    { preview: '<img class="option-sprite" src="head.png" alt="Face option 4">', apply: () => { Object.assign(parts['p-head'], { x: 0, y: 128, sx: 1.04, sy: 0.95, r: 0 }); render('p-head'); } }
-                ]
+            selection: {
+                face: 0,
+                hair: 0,
+                eyes: 0,
+                nose: 0,
+                mouth: 0,
+                body: 0,
+                pants: 0
             },
-            'eye-group': {
-                title: 'Eye Styles',
-                swatches: ['#5a3d1a', '#2c2c2c', '#0f0f0f', '#7b8be9', '#f06fe2', '#f3d2b3'],
-                options: [
-                    { preview: '<img class="option-sprite" src="eye.png" alt="Eye option 1">', apply: () => setEyePreset({ spacing: 22, width: 44, top: 0, y: 189, scaleY: 1, tilt: 0 }) },
-                    { preview: '<img class="option-sprite" src="eye.png" alt="Eye option 2">', apply: () => setEyePreset({ spacing: 27, width: 31, top: 4, y: 191, scaleY: 0.82, tilt: -8 }) },
-                    { preview: '<img class="option-sprite" src="eye.png" alt="Eye option 3">', apply: () => setEyePreset({ spacing: 29, width: 27, top: -1, y: 186, scaleY: 1.08, tilt: 4 }) },
-                    { preview: '<img class="option-sprite" src="eye.png" alt="Eye option 4">', apply: () => setEyePreset({ spacing: 28, width: 29, top: 2, y: 188, scaleY: 0.94, tilt: 10 }) }
-                ]
+            tweaks: {
+                face: { x: 0, y: 0, scale: 0, rotate: 0, stretchX: 0, stretchY: 0, spacing: 0, mirror: false },
+                hair: { x: 0, y: 0, scale: 0, rotate: 0, stretchX: 0, stretchY: 0, spacing: 0, mirror: false },
+                eyes: { x: 0, y: 0, scale: 0, rotate: 0, stretchX: 0, stretchY: 0, spacing: 0, mirror: false },
+                nose: { x: 0, y: 0, scale: 0, rotate: 0, stretchX: 0, stretchY: 0, spacing: 0, mirror: false },
+                mouth: { x: 0, y: 0, scale: 0, rotate: 0, stretchX: 0, stretchY: 0, spacing: 0, mirror: false },
+                body: { x: 0, y: 0, scale: 0, rotate: 0, stretchX: 0, stretchY: 0, spacing: 0, mirror: false },
+                pants: { x: 0, y: 0, scale: 0, rotate: 0, stretchX: 0, stretchY: 0, spacing: 0, mirror: false }
             },
-            'p-shading': {
-                title: 'Nose Styles',
-                swatches: ['#b48a61', '#9d7855', '#7f6246', '#f3d2b3', '#5a3d1a', '#2b2b2b'],
-                options: [
-                    { preview: '<img class="option-sprite" src="shading.png" alt="Nose option 1">', apply: () => setNosePreset({ width: 27, height: 14, x: 0, y: 221, sx: 1, sy: 1, r: 0, opacity: 0.86 }) },
-                    { preview: '<img class="option-sprite" src="shading.png" alt="Nose option 2">', apply: () => setNosePreset({ width: 32, height: 23, x: 0, y: 222, sx: 1.04, sy: 1, r: 0, opacity: 0.84 }) },
-                    { preview: '<img class="option-sprite" src="shading.png" alt="Nose option 3">', apply: () => setNosePreset({ width: 30, height: 24, x: 2, y: 223, sx: 1.05, sy: 1, r: 10, opacity: 0.86 }) },
-                    { preview: '<img class="option-sprite" src="shading.png" alt="Nose option 4">', apply: () => setNosePreset({ width: 28, height: 20, x: -1, y: 221, sx: 0.96, sy: 0.94, r: -8, opacity: 0.74 }) }
-                ]
-            },
-            'p-mouth': {
-                title: 'Mouth Styles',
-                swatches: ['#111111', '#5a3d1a', '#2c2c2c', '#7b8be9', '#f06fe2', '#f3d2b3'],
-                options: [
-                    { preview: '<img class="option-sprite" src="Mouth.png" alt="Mouth option 1">', apply: () => setMouthPreset({ width: 22, x: 0, y: 244, sx: 1, sy: 1, r: 0 }) },
-                    { preview: '<img class="option-sprite" src="Mouth.png" alt="Mouth option 2">', apply: () => setMouthPreset({ width: 24, x: 0, y: 247, sx: 1, sy: 0.92, r: 0 }) },
-                    { preview: '<img class="option-sprite" src="Mouth.png" alt="Mouth option 3">', apply: () => setMouthPreset({ width: 20, x: 0, y: 249, sx: 1.08, sy: 0.82, r: 0 }) },
-                    { preview: '<img class="option-sprite" src="Mouth.png" alt="Mouth option 4">', apply: () => setMouthPreset({ width: 20, x: 1, y: 246, sx: 0.95, sy: 1.08, r: 8 }) }
-                ]
-            },
-            'p-body': {
-                title: 'Shirt Shapes',
-                swatches: ['#f06fe2', '#ff85ed', '#7b8be9', '#5a3d1a', '#f3d2b3', '#26b4a7'],
-                options: [
-                    { preview: '<img class="option-sprite" src="Body.png" alt="Shirt option 1">', apply: () => setBodyPreset({ width: 84, height: 102, y: 281, sleeveOffset: 45, sleeveWidth: 38, sleeveHeight: 69, sleeveY: 294, sleeveAngle: 10, armOffset: 69, armWidth: 44, armHeight: 35, armY: 343, armAngle: 0 }) },
-                    { preview: '<img class="option-sprite" src="Body.png" alt="Shirt option 2">', apply: () => setBodyPreset({ width: 232, height: 148, y: 254, sleeveOffset: 46, sleeveWidth: 44, sleeveY: 287, armOffset: 53, armY: 336 }) },
-                    { preview: '<img class="option-sprite" src="Body.png" alt="Shirt option 3">', apply: () => setBodyPreset({ width: 208, height: 136, y: 266, sleeveOffset: 39, sleeveWidth: 40, sleeveY: 295, armOffset: 46, armY: 340 }) },
-                    { preview: '<img class="option-sprite" src="Body.png" alt="Shirt option 4">', apply: () => setBodyPreset({ width: 214, height: 160, y: 246, sleeveOffset: 40, sleeveWidth: 41, sleeveY: 284, armOffset: 47, armY: 334 }) }
-                ]
-            },
-            'p-pant': {
-                title: 'Pants Shapes',
-                swatches: ['#7b8be9', '#6f7ce1', '#5a3d1a', '#f3d2b3', '#f06fe2', '#2e4f9c'],
-                options: [
-                    { preview: '<img class="option-sprite" src="PantLeg.png" alt="Pants option 1">', apply: () => setPantPreset({ width: 56, height: 49, offset: 13, footOffset: 19, footWidth: 63, footHeight: 16, bottom: 118, footBottom: 100 }) },
-                    { preview: '<img class="option-sprite" src="PantLeg.png" alt="Pants option 2">', apply: () => setPantPreset({ width: 70, height: 96, offset: 15, footOffset: 23 }) },
-                    { preview: '<img class="option-sprite" src="PantLeg.png" alt="Pants option 3">', apply: () => setPantPreset({ width: 60, height: 102, offset: 12, footOffset: 20 }) },
-                    { preview: '<img class="option-sprite" src="PantLeg.png" alt="Pants option 4">', apply: () => setPantPreset({ width: 66, height: 82, offset: 14, footOffset: 22 }) }
-                ]
+            meta: {
+                name: names[0],
+                vibe: vibes[0]
             }
+        });
+
+        const state = defaultState();
+
+        const maskParts = {
+            head: { mask: "head.png", width: 138, height: 129, colorKey: "skin" },
+            hair: { mask: "hair.png", width: 217, height: 197, colorKey: "hair" },
+            nose: { mask: "shading.png", width: 27, height: 14, colorKey: "nose" },
+            mouth: { mask: "Mouth.png", width: 22, height: 17, colorKey: "mouth" },
+            body: { mask: "Body.png", width: 84, height: 102, colorKey: "shirt" },
+            sleeveLeft: { mask: "Sleve.png", width: 38, height: 69, colorKey: "shirt" },
+            sleeveRight: { mask: "Sleve.png", width: 38, height: 69, colorKey: "shirt" },
+            armLeft: { mask: "Arm.png", width: 44, height: 35, colorKey: "skin" },
+            armRight: { mask: "Arm.png", width: 44, height: 35, colorKey: "skin" },
+            pantLeft: { mask: "PantLeg.png", width: 56, height: 49, colorKey: "pants" },
+            pantRight: { mask: "PantLeg.png", width: 56, height: 49, colorKey: "pants" },
+            footLeft: { mask: "Foot.png", width: 63, height: 16, colorKey: "skin" },
+            footRight: { mask: "Foot.png", width: 63, height: 16, colorKey: "skin" },
+            eyeLeft: { mask: "eye.png", width: 44, height: 53, colorKey: "eyes" },
+            eyeRight: { mask: "eye.png", width: 44, height: 53, colorKey: "eyes" }
         };
 
-        const selectedOptions = {
-            'p-hair': 0,
-            'p-head': 0,
-            'eye-group': 0,
-            'p-shading': 0,
-            'p-mouth': 0,
-            'p-body': 0,
-            'p-pant': 0
-        };
-
-        function start() {
-            document.getElementById('overlay').style.display = 'none';
-            document.getElementById('ui').style.display = 'flex';
-            audio.play().catch(() => {});
-            applyCurrentSelections();
-            renderAll();
-            document.getElementById('color-wheel').value = parts[selectedId].col;
-            renderOptionGrid();
-            syncSwatches();
+        function setupMasks() {
+            Object.entries(maskParts).forEach(([key, value]) => {
+                const idMap = {
+                    sleeveLeft: "sleeve-left",
+                    sleeveRight: "sleeve-right",
+                    armLeft: "arm-left",
+                    armRight: "arm-right",
+                    pantLeft: "pant-left",
+                    pantRight: "pant-right",
+                    footLeft: "foot-left",
+                    footRight: "foot-right",
+                    eyeLeft: "eye-left",
+                    eyeRight: "eye-right"
+                };
+                const el = $(idMap[key] || key);
+                if (!el) return;
+                if (key === "eyeLeft" || key === "eyeRight") {
+                    el.style.maskImage = "none";
+                    el.style.webkitMaskImage = "none";
+                    el.style.backgroundImage = `url("${value.mask}")`;
+                    el.style.backgroundRepeat = "no-repeat";
+                    el.style.backgroundPosition = "center";
+                    el.style.backgroundSize = "contain";
+                    el.style.backgroundColor = "transparent";
+                    el.style.width = `${value.width}px`;
+                    el.style.height = `${value.height}px`;
+                    return;
+                }
+                el.style.maskImage = `url("${value.mask}")`;
+                el.style.webkitMaskImage = `url("${value.mask}")`;
+                el.style.width = `${value.width}px`;
+                el.style.height = `${value.height}px`;
+            });
         }
 
-        function selectPart(id, btn) {
-            selectedId = id;
-            document.querySelectorAll('.part-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            if(parts[id].col) document.getElementById('color-wheel').value = parts[id].col;
-            renderOptionGrid();
-            syncSwatches();
+        function clamp(value, min, max) {
+            return Math.min(max, Math.max(min, value));
         }
 
-        function modify(prop, val) {
-            let nextVal = parts[selectedId][prop] + val;
-            if(prop === 's' && parts[selectedId].maxS && nextVal > parts[selectedId].maxS) return;
-            parts[selectedId][prop] = nextVal;
-            if (selectedId === 'p-pant') {
-                document.getElementById('p-pant-l').style.transform = `translateX(calc(-50% + ${parts['p-pant'].x}px)) scale(${parts['p-pant'].s}) rotate(${parts['p-pant'].r}deg)`;
-                document.getElementById('p-pant-r').style.transform = `translateX(calc(-50% + ${parts['p-pant'].x}px)) scale(${-parts['p-pant'].s}, ${parts['p-pant'].s}) rotate(${-parts['p-pant'].r}deg)`;
+        function mergedPreset(key) {
+            const preset = { ...basePresets[key][state.selection[key]] };
+            const tweak = state.tweaks[key];
+            return {
+                ...preset,
+                x: (preset.x || 0) + tweak.x,
+                y: (preset.y || 0) + tweak.y,
+                scale: clamp((preset.scale || 1) + tweak.scale, 0.45, 1.7),
+                rotate: (preset.rotate || 0) + tweak.rotate,
+                stretchX: clamp((preset.stretchX || 1) + tweak.stretchX, 0.55, 1.5),
+                stretchY: clamp((preset.stretchY || 1) + tweak.stretchY, 0.55, 1.55),
+                spacing: (preset.spacing || 0) + tweak.spacing,
+                mirror: tweak.mirror
+            };
+        }
+
+        function setTransform(el, { x = 0, y = 0, scale = 1, stretchX = 1, stretchY = 1, rotate = 0, mirror = false }) {
+            if (!el) return;
+            const sx = scale * stretchX * (mirror ? -1 : 1);
+            const sy = scale * stretchY;
+            el.style.transform = `translateX(calc(-50% + ${x}px)) translateY(${y}px) scale(${sx}, ${sy}) rotate(${rotate}deg)`;
+        }
+
+        function setColor(el, color) {
+            if (el) el.style.backgroundColor = color;
+        }
+
+        function renderStage() {
+            const face = mergedPreset("face");
+            const hair = mergedPreset("hair");
+            const eyes = mergedPreset("eyes");
+            const nose = mergedPreset("nose");
+            const mouth = mergedPreset("mouth");
+            const body = mergedPreset("body");
+            const pants = mergedPreset("pants");
+
+            const head = $("head");
+            head.style.top = "0";
+            setColor(head, state.colors.skin);
+            setTransform(head, face);
+
+            const hairEl = $("hair");
+            hairEl.style.top = "0";
+            setColor(hairEl, state.colors.hair);
+            setTransform(hairEl, hair);
+
+            const noseEl = $("nose");
+            noseEl.style.top = "0";
+            noseEl.style.opacity = String(basePresets.nose[state.selection.nose].opacity || 0.78);
+            setColor(noseEl, state.colors.nose);
+            setTransform(noseEl, nose);
+
+            const mouthEl = $("mouth");
+            mouthEl.style.top = "0";
+            setColor(mouthEl, state.colors.mouth);
+            setTransform(mouthEl, mouth);
+
+            const eyesWrap = $("eyes");
+            eyesWrap.style.top = "0";
+            setTransform(eyesWrap, { x: eyes.x, y: eyes.y, scale: 1, stretchX: 1, stretchY: 1, rotate: 0, mirror: false });
+
+            const eyeScale = clamp(eyes.scale, 0.4, 1.7);
+            const eyeStretchX = clamp(eyes.stretchX, 0.45, 1.6);
+            const eyeStretchY = clamp(eyes.stretchY, 0.35, 1.4);
+            const eyeRotation = eyes.rotate;
+            const eyeSpacing = clamp(eyes.spacing, 18, 44);
+
+            $("eye-left").style.top = "0";
+            $("eye-right").style.top = "0";
+            $("eye-left").style.left = `calc(50% - ${eyeSpacing}px)`;
+            $("eye-right").style.left = `calc(50% + ${eyeSpacing}px)`;
+            $("eye-left").style.transform = `translateX(-50%) scale(${eyeScale * eyeStretchX}, ${eyeScale * eyeStretchY}) rotate(${eyeRotation}deg)`;
+            $("eye-right").style.transform = `translateX(-50%) scale(${-eyeScale * eyeStretchX}, ${eyeScale * eyeStretchY}) rotate(${-eyeRotation}deg)`;
+
+            renderBody(body);
+            renderPants(pants);
+            renderMeta();
+        }
+
+        function renderBody(body) {
+            const bodyEl = $("body");
+            const sleeveLeft = $("sleeve-left");
+            const sleeveRight = $("sleeve-right");
+            const armLeft = $("arm-left");
+            const armRight = $("arm-right");
+
+            setColor(bodyEl, state.colors.shirt);
+            setColor(sleeveLeft, state.colors.shirt);
+            setColor(sleeveRight, state.colors.shirt);
+            setColor(armLeft, state.colors.skin);
+            setColor(armRight, state.colors.skin);
+
+            bodyEl.style.top = "0";
+            setTransform(bodyEl, body);
+
+            sleeveLeft.style.top = "0";
+            sleeveRight.style.top = "0";
+            armLeft.style.top = "0";
+            armRight.style.top = "0";
+
+            setTransform(sleeveLeft, {
+                x: -body.sleeveOffset + body.x,
+                y: body.sleeveY + state.tweaks.body.y,
+                scale: body.scale,
+                stretchX: body.sleeveStretchX + state.tweaks.body.stretchX,
+                stretchY: body.sleeveStretchY + state.tweaks.body.stretchY,
+                rotate: body.rotate + body.sleeveRotate,
+                mirror: false
+            });
+
+            setTransform(sleeveRight, {
+                x: body.sleeveOffset + body.x,
+                y: body.sleeveY + state.tweaks.body.y,
+                scale: body.scale,
+                stretchX: body.sleeveStretchX + state.tweaks.body.stretchX,
+                stretchY: body.sleeveStretchY + state.tweaks.body.stretchY,
+                rotate: -(body.rotate + body.sleeveRotate),
+                mirror: true
+            });
+
+            setTransform(armLeft, {
+                x: -body.armOffset + body.x,
+                y: body.armY + state.tweaks.body.y,
+                scale: body.scale,
+                stretchX: body.armStretchX + state.tweaks.body.stretchX,
+                stretchY: body.armStretchY + state.tweaks.body.stretchY,
+                rotate: body.rotate + body.armRotate,
+                mirror: false
+            });
+
+            setTransform(armRight, {
+                x: body.armOffset + body.x,
+                y: body.armY + state.tweaks.body.y,
+                scale: body.scale,
+                stretchX: body.armStretchX + state.tweaks.body.stretchX,
+                stretchY: body.armStretchY + state.tweaks.body.stretchY,
+                rotate: -(body.rotate + body.armRotate),
+                mirror: true
+            });
+        }
+
+        function renderPants(pants) {
+            const pantLeft = $("pant-left");
+            const pantRight = $("pant-right");
+            const footLeft = $("foot-left");
+            const footRight = $("foot-right");
+            const stageHeight = 560;
+            const legTop = stageHeight - pants.legBottom - maskParts.pantLeft.height + pants.y;
+            const footTop = stageHeight - pants.footBottom - maskParts.footLeft.height + pants.y;
+
+            setColor(pantLeft, state.colors.pants);
+            setColor(pantRight, state.colors.pants);
+            setColor(footLeft, state.colors.skin);
+            setColor(footRight, state.colors.skin);
+
+            pantLeft.style.top = "0";
+            pantRight.style.top = "0";
+            footLeft.style.top = "0";
+            footRight.style.top = "0";
+
+            setTransform(pantLeft, {
+                x: pants.x - pants.legOffset,
+                y: legTop,
+                scale: pants.scale,
+                stretchX: pants.stretchX,
+                stretchY: pants.stretchY,
+                rotate: pants.rotate,
+                mirror: false
+            });
+
+            setTransform(pantRight, {
+                x: pants.x + pants.legOffset,
+                y: legTop,
+                scale: pants.scale,
+                stretchX: pants.stretchX,
+                stretchY: pants.stretchY,
+                rotate: -pants.rotate,
+                mirror: true
+            });
+
+            setTransform(footLeft, {
+                x: pants.x - pants.footOffset,
+                y: footTop,
+                scale: pants.scale,
+                stretchX: 1 + state.tweaks.pants.stretchX * 0.5,
+                stretchY: 1 + state.tweaks.pants.stretchY * 0.25,
+                rotate: pants.rotate,
+                mirror: false
+            });
+
+            setTransform(footRight, {
+                x: pants.x + pants.footOffset,
+                y: footTop,
+                scale: pants.scale,
+                stretchX: 1 + state.tweaks.pants.stretchX * 0.5,
+                stretchY: 1 + state.tweaks.pants.stretchY * 0.25,
+                rotate: -pants.rotate,
+                mirror: true
+            });
+        }
+
+        function renderTabs() {
+            const tabRow = $("tab-row");
+            tabRow.innerHTML = "";
+            categories.forEach((category) => {
+                const button = document.createElement("button");
+                button.className = `tab-btn${state.activeCategory === category.id ? " active" : ""}`;
+                button.textContent = category.label;
+                button.addEventListener("click", () => {
+                    state.activeCategory = category.id;
+                    renderEditor();
+                });
+                tabRow.appendChild(button);
+            });
+        }
+
+        function previewNode(categoryId, index) {
+            const wrapper = document.createElement("div");
+            wrapper.style.position = "relative";
+            wrapper.style.width = "100%";
+            wrapper.style.height = "100%";
+            wrapper.style.display = "grid";
+            wrapper.style.placeItems = "center";
+
+            const preset = basePresets[categoryId][index];
+            if (categoryId === "face") {
+                const el = document.createElement("div");
+                el.className = "preview-mask preview-face";
+                el.style.transform = `scale(${preset.scale * preset.stretchX}, ${preset.scale * preset.stretchY}) rotate(${preset.rotate}deg)`;
+                wrapper.appendChild(el);
+            } else if (categoryId === "hair") {
+                const el = document.createElement("div");
+                el.className = "preview-mask preview-hair";
+                el.style.transform = `translate(${preset.x * 0.3}px, ${preset.y * -0.04}px) scale(${preset.scale * preset.stretchX}, ${preset.scale * preset.stretchY}) rotate(${preset.rotate}deg)`;
+                wrapper.appendChild(el);
+            } else if (categoryId === "eyes") {
+                const left = document.createElement("div");
+                const right = document.createElement("div");
+                left.className = "preview-mask preview-eye";
+                right.className = "preview-mask preview-eye";
+                left.style.position = right.style.position = "absolute";
+                left.style.left = `calc(50% - ${preset.spacing * 0.7}px)`;
+                right.style.left = `calc(50% + ${preset.spacing * 0.7}px)`;
+                left.style.transform = `translateX(-50%) scale(${preset.scale * preset.stretchX}, ${preset.scale * preset.stretchY}) rotate(${preset.rotate}deg)`;
+                right.style.transform = `translateX(-50%) scale(${-preset.scale * preset.stretchX}, ${preset.scale * preset.stretchY}) rotate(${-preset.rotate}deg)`;
+                wrapper.append(left, right);
+            } else if (categoryId === "nose") {
+                const el = document.createElement("div");
+                el.className = "preview-mask preview-nose";
+                el.style.transform = `scale(${preset.scale * preset.stretchX}, ${preset.scale * preset.stretchY}) rotate(${preset.rotate}deg)`;
+                el.style.opacity = String(preset.opacity || 0.8);
+                wrapper.appendChild(el);
+            } else if (categoryId === "mouth") {
+                const el = document.createElement("div");
+                el.className = "preview-mask preview-mouth";
+                el.style.transform = `scale(${preset.scale * preset.stretchX}, ${preset.scale * preset.stretchY}) rotate(${preset.rotate}deg)`;
+                wrapper.appendChild(el);
+            } else if (categoryId === "body") {
+                const shirt = document.createElement("div");
+                const pants = document.createElement("div");
+                shirt.className = "preview-mask preview-shirt";
+                pants.className = "preview-mask preview-pants";
+                shirt.style.transform = `translateY(-6px) scale(${preset.scale * preset.stretchX}, ${preset.scale * preset.stretchY})`;
+                pants.style.transform = `translateY(32px) scale(1.05, 1.1)`;
+                pants.style.color = "#6a78d8";
+                wrapper.append(shirt, pants);
+            } else if (categoryId === "pants") {
+                const pants = document.createElement("div");
+                pants.className = "preview-mask preview-pants";
+                pants.style.transform = `scale(${preset.scale * preset.stretchX}, ${preset.scale * preset.stretchY})`;
+                wrapper.appendChild(pants);
+            }
+            return wrapper;
+        }
+
+        function renderPresetGrid(category) {
+            const presetGrid = $("preset-grid");
+            const presetTitle = $("preset-title");
+            const presetHelp = $("preset-help");
+            presetGrid.innerHTML = "";
+
+            if (category.id === "outfit") {
+                presetTitle.textContent = "Shirt Presets";
+                presetHelp.textContent = "Outfit controls two preset banks. Pick a shirt shape first, then pick pants from the extra row below.";
+
+                basePresets.body.forEach((preset, index) => {
+                    const button = document.createElement("button");
+                    button.className = `preset-btn${state.selection.body === index ? " active" : ""}`;
+                    button.appendChild(previewNode("body", index));
+                    button.addEventListener("click", () => {
+                        state.selection.body = index;
+                        renderAll();
+                    });
+                    presetGrid.appendChild(button);
+                });
+
+                const divider = document.createElement("h4");
+                divider.className = "section-title";
+                divider.textContent = "Pants Presets";
+                divider.style.gridColumn = "1 / -1";
+                divider.style.marginTop = "10px";
+                presetGrid.appendChild(divider);
+
+                basePresets.pants.forEach((preset, index) => {
+                    const button = document.createElement("button");
+                    button.className = `preset-btn${state.selection.pants === index ? " active" : ""}`;
+                    button.appendChild(previewNode("pants", index));
+                    button.addEventListener("click", () => {
+                        state.selection.pants = index;
+                        renderAll();
+                    });
+                    presetGrid.appendChild(button);
+                });
                 return;
             }
-            render(selectedId);
+
+            const key = categoryToPresetKey[category.id];
+            presetTitle.textContent = "Presets";
+            presetHelp.textContent = category.subtitle;
+
+            basePresets[key].forEach((preset, index) => {
+                const button = document.createElement("button");
+                button.className = `preset-btn${state.selection[key] === index ? " active" : ""}`;
+                button.appendChild(previewNode(key, index));
+                button.addEventListener("click", () => {
+                    state.selection[key] = index;
+                    renderAll();
+                });
+                presetGrid.appendChild(button);
+            });
         }
 
-        function eyeDist(val) {
-            eyeSpacing += val;
-            document.getElementById('eye-l').style.left = eyeSpacing + "px";
-            document.getElementById('eye-r').style.right = eyeSpacing + "px";
-        }
-
-        function updateColor(val) {
-            parts[selectedId].col = val;
-            if (selectedId === 'p-head') {
-                document.getElementById('p-head').style.backgroundColor = val;
-                document.getElementById('p-foot-l').style.backgroundColor = val;
-                document.getElementById('p-foot-r').style.backgroundColor = val;
-                document.getElementById('p-arm-l').style.backgroundColor = val;
-                document.getElementById('p-arm-r').style.backgroundColor = val;
-            } else if (selectedId === 'p-pant') {
-                document.getElementById('p-pant-l').style.backgroundColor = val;
-                document.getElementById('p-pant-r').style.backgroundColor = val;
-            } else if (selectedId === 'p-body') {
-                document.getElementById('p-body').style.backgroundColor = val;
-                document.getElementById('p-sleeve-l').style.backgroundColor = val;
-                document.getElementById('p-sleeve-r').style.backgroundColor = val;
-            } else if (selectedId === 'p-hair') {
-                document.getElementById('p-hair').style.backgroundColor = val;
-            } else if (selectedId === 'p-shading') {
-                document.getElementById('p-shading').style.backgroundColor = val;
-            } else {
-                const el = document.getElementById(selectedId);
-                if(el) el.style.backgroundColor = val;
+        function colorSectionsFor(category) {
+            if (category.id === "outfit") {
+                return [
+                    { label: "Shirt Color", key: "shirt" },
+                    { label: "Pants Color", key: "pants" }
+                ];
             }
-            syncSwatches();
+            if (category.id === "eyes") {
+                return [];
+            }
+            return [{ label: `${category.label} Color`, key: category.colorKey }];
         }
 
-        function chooseSwatch(val, btn) {
-            if (!parts[selectedId].col) return;
-            updateColor(val);
-            document.getElementById('color-wheel').value = val;
-            syncSwatches();
-        }
+        function renderSwatches(category) {
+            const swatchGroup = $("swatch-group");
+            swatchGroup.innerHTML = "";
+            const sections = colorSectionsFor(category);
+            const customColor = $("custom-color");
 
-        function syncSwatches() {
-            const group = paletteGroups[selectedId];
-            const currentColor = parts[selectedId].col;
-            swatchPanel.querySelectorAll('.swatch-btn').forEach((btn, index) => {
-                const color = group?.swatches?.[index] || '#cccccc';
-                btn.style.background = color;
-                btn.dataset.swatch = color;
-                btn.style.display = group ? 'block' : 'none';
-                btn.classList.toggle('active', currentColor === color);
+            if (!sections.length) {
+                customColor.disabled = true;
+                customColor.value = "#ffffff";
+                customColor.dataset.colorKey = "";
+                return;
+            }
+
+            customColor.disabled = false;
+
+            sections.forEach((section) => {
+                const wrap = document.createElement("div");
+                wrap.innerHTML = `<h4 class="section-title" style="margin-bottom:10px;">${section.label}</h4>`;
+
+                const strip = document.createElement("div");
+                strip.className = "swatch-strip";
+
+                palettes[section.key].forEach((color) => {
+                    const button = document.createElement("button");
+                    button.className = `swatch-btn${state.colors[section.key] === color ? " active" : ""}`;
+                    button.style.background = color;
+                    button.addEventListener("click", () => {
+                        state.colors[section.key] = color;
+                        syncCustomColorInput(section.key);
+                        renderAll();
+                    });
+                    strip.appendChild(button);
+                });
+
+                wrap.appendChild(strip);
+                swatchGroup.appendChild(wrap);
             });
+
+            syncCustomColorInput(sections[0].key);
         }
 
-        function renderOptionGrid() {
-            const group = paletteGroups[selectedId];
-            optionTitle.textContent = group ? group.title : 'Options';
-            optionGrid.innerHTML = '';
-            if (!group) return;
-            group.options.forEach((option, index) => {
-                const button = document.createElement('button');
-                button.className = 'option-btn';
-                if (selectedOptions[selectedId] === index) button.classList.add('active');
-                button.innerHTML = option.preview;
-                button.onclick = () => {
-                    selectedOptions[selectedId] = index;
-                    option.apply();
-                    renderOptionGrid();
-                };
-                optionGrid.appendChild(button);
-            });
+        function syncCustomColorInput(key) {
+            $("custom-color").value = state.colors[key];
+            $("custom-color").dataset.colorKey = key;
         }
 
-        function applyCurrentSelections() {
-            Object.keys(paletteGroups).forEach((id) => {
-                const option = paletteGroups[id].options[selectedOptions[id]];
-                if (option) option.apply();
-            });
+        function renderEditor() {
+            const category = categories.find((item) => item.id === state.activeCategory);
+            $("editor-title").textContent = category.title;
+            $("editor-subtitle").textContent = category.subtitle;
+            $("active-target").textContent = `Editing ${category.label}`;
+            $("tool-note").textContent = category.id === "eyes"
+                ? "Eyes respond to spacing, size, position, and tilt."
+                : category.id === "outfit"
+                    ? "Outfit tweaks target the shirt body. Pants have their own preset bank."
+                    : "Use move, size, and rotate for fast cleanup. Mirror is strongest on hair.";
+
+            renderTabs();
+            renderPresetGrid(category);
+            renderSwatches(category);
+        }
+
+        function renderMeta() {
+            $("character-name").textContent = state.meta.name;
+            $("character-vibe").textContent = state.meta.vibe;
+            $("face-stat").textContent = basePresets.face[state.selection.face].name;
+            $("eye-stat").textContent = basePresets.eyes[state.selection.eyes].name;
+            $("outfit-stat").textContent = `${basePresets.body[state.selection.body].name} / ${basePresets.pants[state.selection.pants].name}`;
+            $("music-btn").classList.toggle("active", state.musicOn);
+            $("music-btn").textContent = state.musicOn ? "Music On" : "Music Off";
         }
 
         function renderAll() {
-            ['p-hair', 'eye-group', 'p-head', 'p-body', 'p-shading', 'p-mouth'].forEach(render);
+            renderStage();
+            renderEditor();
         }
 
-        function setEyePreset(preset) {
-            eyeSpacing = preset.spacing;
-            parts['eye-group'].y = preset.y;
-            render('eye-group');
-            const leftEye = document.getElementById('eye-l');
-            const rightEye = document.getElementById('eye-r');
-            leftEye.style.width = preset.width + "px";
-            rightEye.style.width = preset.width + "px";
-            leftEye.style.top = preset.top + "px";
-            rightEye.style.top = preset.top + "px";
-            leftEye.style.left = eyeSpacing + "px";
-            rightEye.style.right = eyeSpacing + "px";
-            leftEye.style.transform = `scaleY(${preset.scaleY}) rotate(${preset.tilt}deg)`;
-            rightEye.style.transform = `scaleX(-1) scaleY(${preset.scaleY}) rotate(${-preset.tilt}deg)`;
+        function activeFeatureKey() {
+            if (state.activeCategory === "outfit") return "body";
+            return categoryToPresetKey[state.activeCategory];
         }
 
-        function setNosePreset(preset) {
-            const nose = document.getElementById('p-shading');
-            parts['p-shading'].x = preset.x;
-            parts['p-shading'].y = preset.y;
-            parts['p-shading'].sx = preset.sx;
-            parts['p-shading'].sy = preset.sy;
-            parts['p-shading'].r = preset.r;
-            nose.style.width = preset.width + "px";
-            nose.style.height = preset.height + "px";
-            nose.style.opacity = preset.opacity;
-            render('p-shading');
+        function adjustFeature(action, value) {
+            const key = activeFeatureKey();
+            const tweak = state.tweaks[key];
+
+            if (action === "x" || action === "y") {
+                tweak[action] = clamp(tweak[action] + value, -36, 36);
+            } else if (action === "scale") {
+                tweak.scale = clamp(tweak.scale + value, -0.35, 0.45);
+            } else if (action === "rotate") {
+                tweak.rotate = clamp(tweak.rotate + value, -30, 30);
+            } else if (action === "spacing") {
+                if (key === "eyes") tweak.spacing = clamp(tweak.spacing + value, -12, 12);
+                if (key === "mouth") tweak.stretchX = clamp(tweak.stretchX + value * 0.02, -0.25, 0.3);
+            } else if (action === "reset-adjustments") {
+                state.tweaks[key] = { x: 0, y: 0, scale: 0, rotate: 0, stretchX: 0, stretchY: 0, spacing: 0, mirror: false };
+            } else if (action === "mirror") {
+                state.tweaks[key].mirror = !state.tweaks[key].mirror;
+            }
+
+            renderStage();
         }
 
-        function setMouthPreset(preset) {
-            const mouth = document.getElementById('p-mouth');
-            parts['p-mouth'].x = preset.x;
-            parts['p-mouth'].y = preset.y;
-            parts['p-mouth'].sx = preset.sx;
-            parts['p-mouth'].sy = preset.sy;
-            parts['p-mouth'].r = preset.r;
-            mouth.style.width = preset.width + "px";
-            render('p-mouth');
+        function randomizeCharacter() {
+            state.selection.face = Math.floor(Math.random() * basePresets.face.length);
+            state.selection.hair = Math.floor(Math.random() * basePresets.hair.length);
+            state.selection.eyes = Math.floor(Math.random() * basePresets.eyes.length);
+            state.selection.nose = Math.floor(Math.random() * basePresets.nose.length);
+            state.selection.mouth = Math.floor(Math.random() * basePresets.mouth.length);
+            state.selection.body = Math.floor(Math.random() * basePresets.body.length);
+            state.selection.pants = Math.floor(Math.random() * basePresets.pants.length);
+
+            Object.keys(state.colors).forEach((key) => {
+                const pool = palettes[key];
+                state.colors[key] = pool[Math.floor(Math.random() * pool.length)];
+            });
+
+            Object.keys(state.tweaks).forEach((key) => {
+                state.tweaks[key] = {
+                    x: Math.round((Math.random() * 10) - 5),
+                    y: Math.round((Math.random() * 8) - 4),
+                    scale: Number(((Math.random() * 0.12) - 0.06).toFixed(2)),
+                    rotate: Math.round((Math.random() * 12) - 6),
+                    stretchX: Number(((Math.random() * 0.1) - 0.05).toFixed(2)),
+                    stretchY: Number(((Math.random() * 0.1) - 0.05).toFixed(2)),
+                    spacing: Math.round((Math.random() * 4) - 2),
+                    mirror: Math.random() > 0.8
+                };
+            });
+
+            state.meta.name = names[Math.floor(Math.random() * names.length)];
+            state.meta.vibe = vibes[Math.floor(Math.random() * vibes.length)];
+            renderAll();
         }
 
-        function setBodyPreset(preset) {
-            const body = document.getElementById('p-body');
-            const sleeveL = document.getElementById('p-sleeve-l');
-            const sleeveR = document.getElementById('p-sleeve-r');
-            const armL = document.getElementById('p-arm-l');
-            const armR = document.getElementById('p-arm-r');
-            body.style.width = preset.width + "px";
-            body.style.height = preset.height + "px";
-            parts['p-body'].y = preset.y;
-            sleeveL.style.width = preset.sleeveWidth + "px";
-            sleeveR.style.width = preset.sleeveWidth + "px";
-            sleeveL.style.height = `${preset.sleeveHeight ?? 62}px`;
-            sleeveR.style.height = `${preset.sleeveHeight ?? 62}px`;
-            sleeveL.style.top = preset.sleeveY + "px";
-            sleeveR.style.top = preset.sleeveY + "px";
-            sleeveL.style.marginLeft = `${-preset.sleeveOffset}px`;
-            sleeveR.style.marginLeft = `${preset.sleeveOffset}px`;
-            sleeveL.style.transform = `translateX(-50%) rotate(${preset.sleeveAngle ?? 0}deg)`;
-            sleeveR.style.transform = `translateX(-50%) scaleX(-1) rotate(${-(preset.sleeveAngle ?? 0)}deg)`;
-            armL.style.width = `${preset.armWidth ?? 38}px`;
-            armR.style.width = `${preset.armWidth ?? 38}px`;
-            armL.style.height = `${preset.armHeight ?? 20}px`;
-            armR.style.height = `${preset.armHeight ?? 20}px`;
-            armL.style.top = `${preset.armY}px`;
-            armR.style.top = `${preset.armY}px`;
-            armL.style.marginLeft = `${-preset.armOffset}px`;
-            armR.style.marginLeft = `${preset.armOffset}px`;
-            armL.style.transform = `translateX(-50%) rotate(${preset.armAngle ?? 0}deg)`;
-            armR.style.transform = `translateX(-50%) scaleX(-1) rotate(${-(preset.armAngle ?? 0)}deg)`;
-            render('p-body');
+        function resetCharacter() {
+            const fresh = defaultState();
+            Object.assign(state, fresh);
+            renderAll();
         }
 
-        function setPantPreset(preset) {
-            const pantL = document.getElementById('p-pant-l');
-            const pantR = document.getElementById('p-pant-r');
-            const footL = document.getElementById('p-foot-l');
-            const footR = document.getElementById('p-foot-r');
-            pantL.style.width = preset.width + "px";
-            pantR.style.width = preset.width + "px";
-            pantL.style.height = preset.height + "px";
-            pantR.style.height = preset.height + "px";
-            pantL.style.bottom = `${preset.bottom ?? 42}px`;
-            pantR.style.bottom = `${preset.bottom ?? 42}px`;
-            pantL.style.marginLeft = `${-preset.offset}px`;
-            pantR.style.marginLeft = `${preset.offset}px`;
-            footL.style.width = `${preset.footWidth ?? 76}px`;
-            footR.style.width = `${preset.footWidth ?? 76}px`;
-            footL.style.height = `${preset.footHeight ?? 24}px`;
-            footR.style.height = `${preset.footHeight ?? 24}px`;
-            footL.style.bottom = `${preset.footBottom ?? 18}px`;
-            footR.style.bottom = `${preset.footBottom ?? 18}px`;
-            footL.style.marginLeft = `${-preset.footOffset}px`;
-            footR.style.marginLeft = `${preset.footOffset}px`;
-            pantL.style.transform = `translateX(calc(-50% + ${parts['p-pant'].x}px)) scale(${parts['p-pant'].s}) rotate(${parts['p-pant'].r}deg)`;
-            pantR.style.transform = `translateX(calc(-50% + ${parts['p-pant'].x}px)) scale(${-parts['p-pant'].s}, ${parts['p-pant'].s}) rotate(${-parts['p-pant'].r}deg)`;
+        function snapActiveFeature() {
+            const key = activeFeatureKey();
+            state.tweaks[key] = { x: 0, y: 0, scale: 0, rotate: 0, stretchX: 0, stretchY: 0, spacing: 0, mirror: false };
+            renderStage();
         }
 
-        function render(id) {
-            const d = parts[id];
-            const el = document.getElementById(id);
-            if(!el) return;
-            el.style.top = d.y + "px";
-            el.style.transform = `translateX(calc(-50% + ${d.x}px)) scale(${d.s * (d.sx ?? 1)}, ${d.s * (d.sy ?? 1)}) rotate(${d.r}deg)`;
+        function startApp(randomizeFirst = false) {
+            $("start-screen").style.display = "none";
+            $("app").style.display = "block";
+            if (randomizeFirst) randomizeCharacter();
+            renderAll();
+        }
+
+        function toggleMusic() {
+            const audio = $("bgm");
+            state.musicOn = !state.musicOn;
+            if (state.musicOn) {
+                audio.play().catch(() => {
+                    state.musicOn = false;
+                    renderMeta();
+                });
+            } else {
+                audio.pause();
+            }
+            renderMeta();
+        }
+
+        function bindEvents() {
+            $("enter-btn").addEventListener("click", () => startApp(false));
+            $("randomize-start-btn").addEventListener("click", () => startApp(true));
+            $("randomize-btn").addEventListener("click", randomizeCharacter);
+            $("reset-btn").addEventListener("click", resetCharacter);
+            $("music-btn").addEventListener("click", toggleMusic);
+            $("snap-btn").addEventListener("click", snapActiveFeature);
+
+            document.querySelectorAll(".tool-btn").forEach((button) => {
+                button.addEventListener("click", () => {
+                    const action = button.dataset.action;
+                    if (action === "reset-adjustments" || action === "mirror") {
+                        adjustFeature(action, 0);
+                        return;
+                    }
+                    const [type, raw] = action.split(":");
+                    adjustFeature(type, Number(raw));
+                });
+            });
+
+            $("custom-color").addEventListener("input", (event) => {
+                const key = event.target.dataset.colorKey;
+                if (!key) return;
+                state.colors[key] = event.target.value;
+                renderAll();
+            });
+        }
+
+        setupMasks();
+        bindEvents();
+
+        if (new URLSearchParams(window.location.search).get("autostart") === "1") {
+            startApp(false);
         }
     </script>
 </body>
