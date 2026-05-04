@@ -17,7 +17,8 @@
       gap: 12px;
       font-family: Arial, sans-serif;
     }
-    .site-nav a {
+    .site-nav a,
+    .site-nav button {
       background: rgba(255, 171, 0, 0.55);
       border: 5px solid #fff1ad;
       color: #fff1ad;
@@ -26,6 +27,12 @@
       font-weight: 900;
       text-transform: uppercase;
       text-shadow: 0 2px 0 rgba(255, 95, 0, 0.55);
+      cursor: pointer;
+    }
+    .site-nav button {
+      font: inherit;
+      line-height: 1;
+      background-clip: padding-box;
     }
     body.preview-mode .site-nav {
       display: none;
@@ -391,6 +398,139 @@
         activeVm.renderer.draw();
       }
     };
+    const waitForNextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+    const getAvatarTargets = () => {
+      const activeVm = window.vm;
+      if (!activeVm || !activeVm.runtime) return [];
+
+      return previewSpriteNames
+        .map((targetName) => getSpriteTarget(targetName))
+        .filter((target) => target && Number.isFinite(target.drawableID));
+    };
+    const getAvatarDrawableIdsInLayerOrder = () => {
+      const activeVm = window.vm;
+      const avatarDrawableIds = new Set(getAvatarTargets().map((target) => target.drawableID));
+      const drawList = activeVm && activeVm.renderer && activeVm.renderer._drawList || [];
+      return drawList.filter((drawableId) => avatarDrawableIds.has(drawableId));
+    };
+    const getOpaqueBounds = (canvas) => {
+      const width = canvas.width;
+      const height = canvas.height;
+      const context = canvas.getContext('2d');
+      if (!context) return null;
+
+      const imageData = context.getImageData(0, 0, width, height);
+      const data = imageData.data;
+      let minX = width;
+      let minY = height;
+      let maxX = -1;
+      let maxY = -1;
+
+      for (let y = 0; y < height; y += 1) {
+        for (let x = 0; x < width; x += 1) {
+          const alpha = data[(y * width + x) * 4 + 3];
+          if (alpha > 16) {
+            minX = Math.min(minX, x);
+            minY = Math.min(minY, y);
+            maxX = Math.max(maxX, x);
+            maxY = Math.max(maxY, y);
+          }
+        }
+      }
+
+      if (maxX < minX || maxY < minY) return null;
+      return { minX, minY, maxX, maxY };
+    };
+    const getPreviewCanvasDataUrl = () => {
+      const activeVm = window.vm;
+      const renderer = activeVm && activeVm.renderer;
+      if (!renderer || typeof renderer.extractDrawableScreenSpace !== 'function') {
+        throw new Error('Preview renderer not available.');
+      }
+
+      const stageWidth = activeVm.runtime && activeVm.runtime.stageWidth || 480;
+      const stageHeight = activeVm.runtime && activeVm.runtime.stageHeight || 360;
+      const outputCanvas = document.createElement('canvas');
+      outputCanvas.width = stageWidth;
+      outputCanvas.height = stageHeight;
+      const outputContext = outputCanvas.getContext('2d');
+
+      if (!outputContext) {
+        throw new Error('Could not create avatar export canvas.');
+      }
+
+      outputContext.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
+
+      const drawableIds = getAvatarDrawableIdsInLayerOrder();
+      if (drawableIds.length === 0) {
+        throw new Error('Avatar drawables not available.');
+      }
+
+      drawableIds.forEach((drawableId) => {
+        const extractedDrawable = renderer.extractDrawableScreenSpace(drawableId);
+        if (!extractedDrawable || !extractedDrawable.imageData) return;
+
+        const drawableCanvas = document.createElement('canvas');
+        drawableCanvas.width = extractedDrawable.imageData.width;
+        drawableCanvas.height = extractedDrawable.imageData.height;
+        const drawableContext = drawableCanvas.getContext('2d');
+        if (!drawableContext) return;
+
+        drawableContext.putImageData(extractedDrawable.imageData, 0, 0);
+        outputContext.drawImage(
+          drawableCanvas,
+          Math.round(extractedDrawable.x),
+          Math.round(extractedDrawable.y)
+        );
+      });
+
+      if (!getOpaqueBounds(outputCanvas)) {
+        throw new Error('Avatar drawables rendered transparent.');
+      }
+
+      return {
+        dataUrl: outputCanvas.toDataURL('image/png'),
+        width: outputCanvas.width,
+        height: outputCanvas.height
+      };
+    };
+    const sendPreviewCanvasData = async (sourceWindow, targetOrigin, requestId) => {
+      try {
+        if (isPreviewMode) {
+          hidePreviewUi();
+          getAvatarTargets().forEach((target) => {
+            if (typeof target.setVisible === 'function') target.setVisible(true);
+          });
+          if (previewAvatar) {
+            const previewLines = applyPreviewVariables();
+            applyImportedAvatarState(previewLines);
+          }
+        }
+        redrawRuntime();
+        await waitForNextFrame();
+        redrawRuntime();
+        await waitForNextFrame();
+
+        const canvasData = getPreviewCanvasDataUrl();
+        sourceWindow.postMessage({
+          type: 'CANVAS_DATA',
+          requestId,
+          ...canvasData
+        }, targetOrigin);
+      } catch (error) {
+        sourceWindow.postMessage({
+          type: 'CANVAS_DATA',
+          requestId,
+          error: error.message || 'Could not export preview canvas.'
+        }, targetOrigin);
+      }
+    };
+    window.addEventListener('message', (event) => {
+      if (!event.data || event.data.type !== 'REQUEST_CANVAS_DATA') return;
+      if (event.source !== window.parent || event.origin !== window.location.origin) return;
+
+      sendPreviewCanvasData(event.source, event.origin, event.data.requestId);
+    });
     const setTargetAvatarState = (targetName, state) => {
       const target = getSpriteTarget(targetName);
       if (!target) return;

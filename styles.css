@@ -21,7 +21,7 @@ body {
     url("/assets/ff6af26807fc4b2f3e9c6e8a3686882f.png") center / cover fixed,
     var(--sun);
   color: var(--ink);
-  font-family: "Arial Narrow", "Aptos Narrow", Arial, sans-serif;
+  font-family: "Comic Sans MS", "Comic Sans", "Comic Neue", "Chalkboard SE", "Apple Chancery", "Segoe Print", "Segoe UI Emoji", "Trebuchet MS", "Verdana", "Arial", "Liberation Sans", "Nimbus Sans L", sans-serif;
   overflow-x: hidden;
 }
 
@@ -170,12 +170,17 @@ textarea {
   gap: 14px;
 }
 
-.file-input {
+.file-input,
+.text-input {
   width: 100%;
   min-height: 48px;
   padding: 10px;
   border: 4px solid var(--cream);
   background: rgba(255, 255, 255, 0.82);
+}
+
+.text-input {
+  color: var(--ink);
 }
 
 .button-row {
@@ -195,10 +200,17 @@ textarea {
   transform: none;
 }
 
-.download-button {
+.character-actions {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  margin: 0 0 16px;
+}
+
+.download-button,
+.download-png-button {
   display: block;
   width: fit-content;
-  margin: 0 auto 16px;
 }
 
 .save-status {
@@ -275,6 +287,69 @@ textarea {
 .character-meta {
   margin: 0 0 16px;
   font-size: 0.95rem;
+}
+
+.character-details-toggle {
+  margin-top: 12px;
+}
+
+.character-details-toggle summary {
+  display: block;
+  padding: 12px;
+  margin: -12px -18px 12px -18px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 4px solid var(--ink);
+  color: var(--ink);
+  font-weight: 900;
+  font-size: 1.1rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.character-details-toggle summary::-webkit-details-marker,
+.character-details-toggle summary::marker {
+  display: none;
+  content: "";
+}
+
+.character-details-toggle summary:hover {
+  background: rgba(255, 255, 255, 1);
+  filter: brightness(1.05);
+}
+
+.character-details-toggle[open] summary {
+  margin-bottom: 0;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.character-details-toggle[open] summary::after {
+  content: " ▲";
+  float: right;
+  font-size: 0.9rem;
+}
+
+.character-details-toggle summary::after {
+  content: " ▼";
+  float: right;
+  font-size: 0.9rem;
+}
+
+.character-details-toggle > *:not(summary) {
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    margin-top: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 800px;
+    margin-top: 12px;
+  }
 }
 
 .details-grid {

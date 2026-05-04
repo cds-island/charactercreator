@@ -1,5 +1,6 @@
 const uploadForm = document.getElementById('upload-form');
 const characterFileInput = document.getElementById('character-file');
+const avatarNameInput = document.getElementById('avatar-name');
 const uploadButton = document.getElementById('upload-button');
 const refreshButton = document.getElementById('refresh-button');
 const saveStatus = document.getElementById('save-status');
@@ -28,6 +29,157 @@ const fields = [
 
 function setSaveStatus(message) {
   saveStatus.textContent = message;
+}
+
+function createDownloadLink(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
+function cropCanvasToOpaqueBounds(sourceCanvas) {
+  const width = sourceCanvas.width;
+  const height = sourceCanvas.height;
+  const context = sourceCanvas.getContext('2d');
+  if (!context) return sourceCanvas;
+
+  const imageData = context.getImageData(0, 0, width, height);
+  const data = imageData.data;
+  let minX = width;
+  let minY = height;
+  let maxX = 0;
+  let maxY = 0;
+  let foundOpaque = false;
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const alpha = data[(y * width + x) * 4 + 3];
+      if (alpha > 16) {
+        foundOpaque = true;
+        minX = Math.min(minX, x);
+        minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x);
+        maxY = Math.max(maxY, y);
+      }
+    }
+  }
+
+  if (!foundOpaque || minX >= maxX || minY >= maxY) {
+    return sourceCanvas;
+  }
+
+  const padding = 10;
+  minX = Math.max(0, minX - padding);
+  minY = Math.max(0, minY - padding);
+  maxX = Math.min(width, maxX + padding);
+  maxY = Math.min(height, maxY + padding);
+  const croppedWidth = maxX - minX;
+  const croppedHeight = maxY - minY;
+
+  const outputCanvas = document.createElement('canvas');
+  outputCanvas.width = croppedWidth;
+  outputCanvas.height = croppedHeight;
+  const outputContext = outputCanvas.getContext('2d');
+  if (!outputContext) return sourceCanvas;
+
+  outputContext.clearRect(0, 0, croppedWidth, croppedHeight);
+  outputContext.drawImage(sourceCanvas, minX, minY, croppedWidth, croppedHeight, 0, 0, croppedWidth, croppedHeight);
+  return outputCanvas;
+}
+
+function requestCanvasDataFromFrame(frame) {
+  return new Promise((resolve, reject) => {
+    const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const timeout = window.setTimeout(() => {
+      window.removeEventListener('message', handleCanvasData);
+      reject(new Error('Preview canvas not available.'));
+    }, 10000);
+
+    function handleCanvasData(event) {
+      if (event.source !== frame.contentWindow || event.origin !== window.location.origin) return;
+      if (!event.data || event.data.type !== 'CANVAS_DATA' || event.data.requestId !== requestId) return;
+
+      window.clearTimeout(timeout);
+      window.removeEventListener('message', handleCanvasData);
+
+      if (event.data.error) {
+        reject(new Error(event.data.error));
+        return;
+      }
+
+      if (!event.data.dataUrl) {
+        reject(new Error('Preview returned no image data.'));
+        return;
+      }
+
+      resolve(event.data.dataUrl);
+    }
+
+    window.addEventListener('message', handleCanvasData);
+    frame.contentWindow.postMessage({ type: 'REQUEST_CANVAS_DATA', requestId }, window.location.origin);
+  });
+}
+
+function loadImageFromDataUrl(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error('Could not process avatar image.'));
+    image.src = dataUrl;
+  });
+}
+
+function createPngBlob(canvas) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        reject(new Error('Could not create PNG file.'));
+        return;
+      }
+
+      resolve(blob);
+    }, 'image/png');
+  });
+}
+
+async function downloadAvatarPngFromFrame(frame, characterName) {
+  if (!frame || !(frame instanceof HTMLIFrameElement)) {
+    setSaveStatus('Unable to locate iframe for avatar.');
+    return;
+  }
+
+  setSaveStatus('Preparing avatar for export...');
+
+  try {
+    const dataUrl = await requestCanvasDataFromFrame(frame);
+    const image = await loadImageFromDataUrl(dataUrl);
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+
+    if (!context) {
+      throw new Error('Could not create PNG canvas.');
+    }
+
+    canvas.width = image.width;
+    canvas.height = image.height;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(image, 0, 0);
+
+    const exportCanvas = cropCanvasToOpaqueBounds(canvas);
+    const filename = `${characterName.replace(/\.[^/.]+$/, '')}-avatar.png`;
+    const blob = await createPngBlob(exportCanvas);
+
+    createDownloadLink(blob, filename);
+    setSaveStatus('PNG download started.');
+  } catch (error) {
+    console.error(error);
+    setSaveStatus(`Could not export avatar PNG: ${error.message}`);
+  }
 }
 
 function escapeHtml(value) {
@@ -100,7 +252,7 @@ function createPreviewUrl(characterText) {
     avatar: characterText
   });
 
-  return `/creator?${query.toString()}`;
+  return `/creator.html?${query.toString()}`;
 }
 
 function createAvatarPreview(character, characterName) {
@@ -225,24 +377,38 @@ function renderCharacters(characters) {
     return `
       <article class="box character-card">
         ${createAvatarPreview(character, character.originalName)}
-        <a
-          class="button download-button"
-          href="${escapeHtml(createDownloadUrl(character.content))}"
-          download="${escapeHtml(downloadName)}"
-        >Download Avatar Data</a>
+        <div class="character-actions">
+          <a
+            class="button download-button"
+            href="${escapeHtml(createDownloadUrl(character.content))}"
+            download="${escapeHtml(downloadName)}"
+          >Download Avatar Data</a>
+          <button class="button download-png-button" type="button">Download Avatar PNG</button>
+        </div>
         <h2>${escapeHtml(character.originalName)}</h2>
         <p class="character-meta">Saved ${escapeHtml(savedDate)}</p>
-        ${createDetailsSection(lines)}
-        <div class="raw-data-title">Raw Data</div>
-        <pre class="raw-data">${escapeHtml(character.content)}</pre>
+        <details class="character-details-toggle">
+          <summary class="details-summary">View character details</summary>
+          ${createDetailsSection(lines)}
+          <div class="raw-data-title">Raw Data</div>
+          <pre class="raw-data">${escapeHtml(character.content)}</pre>
+        </details>
       </article>
     `;
   }).join('');
 
   document.querySelectorAll('.avatar-preview-frame').forEach((frame) => {
     frame.addEventListener('load', () => {
-      setTimeout(() => markPreviewReady(frame), 7000);
+      setTimeout(() => markPreviewReady(frame), 5000);
     });
+
+    // Fallback timeout in case load event doesn't fire
+    setTimeout(() => {
+      const preview = frame.closest('.avatar-preview');
+      if (preview && !preview.classList.contains('is-ready')) {
+        markPreviewReady(frame);
+      }
+    }, 8000);
   });
 }
 
@@ -266,6 +432,24 @@ window.addEventListener('message', (event) => {
   });
 });
 
+document.addEventListener('click', (event) => {
+  const button = event.target.closest('.download-png-button');
+  if (!button) return;
+
+  const card = button.closest('.character-card');
+  if (!card) {
+    setSaveStatus('Unable to locate avatar preview.');
+    return;
+  }
+
+  const frame = card.querySelector('.avatar-preview-frame');
+  const characterName = card.querySelector('h2')?.textContent || 'avatar';
+  button.disabled = true;
+  Promise.resolve(downloadAvatarPngFromFrame(frame, characterName)).finally(() => {
+    button.disabled = false;
+  });
+});
+
 async function loadCharacters() {
   setSaveStatus('Loading characters...');
 
@@ -281,6 +465,10 @@ async function loadCharacters() {
 
 async function uploadCharacter(file) {
   const content = await file.text();
+  const avatarName = avatarNameInput.value.trim();
+  const uploadName = avatarName
+    ? `${avatarName.replace(/\.txt$/i, '')}.txt`
+    : file.name;
 
   const response = await fetch('/api/characters', {
     method: 'POST',
@@ -288,7 +476,7 @@ async function uploadCharacter(file) {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      filename: file.name,
+      filename: uploadName,
       content
     })
   });
@@ -314,6 +502,7 @@ uploadForm.addEventListener('submit', async (event) => {
   try {
     await uploadCharacter(file);
     characterFileInput.value = '';
+    avatarNameInput.value = '';
     setSaveStatus('Character saved.');
     await loadCharacters();
   } catch (error) {

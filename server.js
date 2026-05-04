@@ -15,7 +15,8 @@ const routes = {
   '/characters.html': 'characters.html',
   '/characters.js': 'characters.js',
   '/script.js': 'script.js',
-  '/styles.css': 'styles.css'
+  '/styles.css': 'styles.css',
+  '/404.html': '404.html'
 };
 
 const contentTypes = {
@@ -37,7 +38,7 @@ function sendJson(response, statusCode, data) {
   response.end(JSON.stringify(data));
 }
 
-function sendFile(response, filePath) {
+function sendFile(response, filePath, statusCode = 200) {
   fs.readFile(filePath, (error, fileBuffer) => {
     if (error) {
       sendJson(response, 404, { error: 'Not found.' });
@@ -45,8 +46,24 @@ function sendFile(response, filePath) {
     }
 
     const extension = path.extname(filePath).toLowerCase();
-    response.writeHead(200, {
+    response.writeHead(statusCode, {
       'Content-Type': contentTypes[extension] || 'application/octet-stream',
+      'Cache-Control': 'no-store'
+    });
+    response.end(fileBuffer);
+  });
+}
+
+function send404Page(response) {
+  const filePath = path.join(projectRoot, '404.html');
+  fs.readFile(filePath, (error, fileBuffer) => {
+    if (error) {
+      sendJson(response, 404, { error: 'Not found.' });
+      return;
+    }
+
+    response.writeHead(404, {
+      'Content-Type': 'text/html; charset=utf-8',
       'Cache-Control': 'no-store'
     });
     response.end(fileBuffer);
@@ -162,7 +179,7 @@ function createServer() {
         return;
       }
 
-      sendJson(response, 404, { error: 'Not found.' });
+      send404Page(response);
     } catch (error) {
       sendJson(response, 500, { error: error.message || 'Server error.' });
     }
