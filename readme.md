@@ -6,7 +6,7 @@ A web-based character creation tool inspired by systems like Mii Maker. This pro
 
 Overview
 
-Character Creator is designed to replicate the feel of a console-style avatar editor in the browser. Users can customize different parts of a character—such as hair, eyes, and other features—through a structured, button-driven interface.
+Character Creator is designed to replicate the feel of a console-style avatar editor in the browser. Users can customize different parts of a character such as hair, eyes, and other features through a structured, button-driven interface.
 
 The project is intentionally lightweight and modular, making it easy to expand or integrate into other applications such as games or creative tools.
 
@@ -79,7 +79,7 @@ Mobile support
 ```
 # Contributing
 
-Contributions are welcome. Fork the repository, create a branch, and submit a pull request with your changes.
+Contributions are welcome. Fork the repository, create a branch, and submit a pull request with your changes. Please.
 
 # License
 
