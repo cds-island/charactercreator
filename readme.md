@@ -1,95 +1,168 @@
 # Character Creator
 
-Note: “Character Creator” is a placeholder name and may change in the future.
+**Character Creator** (temporary name) is a lightweight, browser-based character customization tool inspired by console-style avatar editors like Mii Maker.
 
-A web-based character creation tool inspired by systems like Mii Maker. This project focuses on a simple, responsive interface for building stylized characters using selectable features and layered assets.
+It provides a modular, layer-based system for building stylized characters using selectable visual assets and a simple navigation-driven UI.
 
-Overview
+---
 
-Character Creator is designed to replicate the feel of a console-style avatar editor in the browser. Users can customize different parts of a character such as hair, eyes, and other features through a structured, button-driven interface.
+## Overview
 
-The project is intentionally lightweight and modular, making it easy to expand or integrate into other applications such as games or creative tools.
+This project is designed to replicate the feel of a console avatar editor inside the browser.
 
-Features
-Console-style character creation interface
-Customizable character features (hair, eyes, etc.)
-Layer-based rendering system
-Button-based navigation for selecting options
-Support for background audio
-Runs entirely in the browser
+Instead of freeform drawing, characters are built by selecting from predefined asset sets (hair, eyes, mouth, etc.). Each selection updates a specific visual layer in real time.
 
-Installation
+The system is intentionally lightweight, making it easy to extend, modify, or embed into other projects.
 
-Clone the repository:
-```
-git clone https://github.com/cds-island/charactercreator.git
-cd charactercreator
-```
-No build step is required for basic usage.
+---
 
-Usage
+## Features
 
-Open the project directly:
+- Console-style avatar editor UI  
+- Layer-based character rendering system  
+- Category-based customization (hair, eyes, face, etc.)  
+- Real-time preview updates  
+- Button-driven navigation (no complex menus)  
+- Optional keyboard navigation support  
+- Asset-based customization system (swap images per feature)  
+- Fully client-side (HTML/CSS/JS only)  
+- Easy to expand with new parts and categories  
 
-open index.html
+---
 
-Or run a local server:
+## The Editor System
 
-# Python
-`python -m http.server`
+The editor is built around a **layer stack model**.
 
-# Node
-`npx serve`
+Each character is composed of multiple independent layers:
 
-Then navigate to:
+- Base head/body layer  
+- Hair layer  
+- Eyes layer  
+- Mouth layer  
+- Optional accessories layer  
 
-`http://localhost:8000`
+When a user changes a feature:
+- Only that specific layer is replaced  
+- Other layers remain unchanged  
+- The final character is re-rendered instantly in the browser  
 
-# How It Works
+This makes the system fast, modular, and easy to expand.
 
-Each character is built using a layered system. Individual assets (such as hair or eyes) are stacked visually, and selecting a new option replaces only that specific layer.
+---
 
-The interface is structured around categories, allowing users to switch between different feature groups and apply changes in real time.
+## Controls
 
-Project Structure
-```
+### UI Navigation
+- Left / Right buttons → Cycle through options in a category  
+- Up / Down (optional) → Switch between categories  
+- Select button → Confirm or apply option  
+- Back button → Return to category menu  
+
+### Keyboard (if enabled)
+- Arrow keys → Navigate options  
+- Enter → Select  
+- Escape → Back  
+
+---
+
+## Character Categories
+
+Typical categories include:
+
+- Hair styles  
+- Eye styles  
+- Mouth expressions  
+- Skin tones (optional)  
+- Accessories (glasses, hats, etc.)  
+
+Each category pulls from a defined asset list stored in the project.
+
+---
+
+## Asset System
+
+All visual components are stored as individual image files inside the `assets/` folder.
+
+Example structure:
+
+assets/
+├── hair/
+├── eyes/
+├── mouth/
+└── accessories/
+
+Each category is mapped in `script.js`, allowing easy expansion by adding new image files without changing core logic.
+
+---
+
+## How It Works
+
+1. The base character is loaded in `index.html`  
+2. Each feature category is defined in JavaScript  
+3. When a user selects an option:
+   - The corresponding image layer is updated  
+4. Layers are stacked using CSS positioning  
+5. The result is a fully composed character preview  
+
+---
+
+## Project Structure
+
 charactercreator/
-├── index.html
-├── style.css
-├── script.js
-├── assets/
+├── index.html      # Main UI structure
+├── style.css       # Layout + layering system
+├── script.js       # Editor logic + state handling
+├── assets/         # Character part images
 └── README.md
-```
 
-# Customization
+---
 
-The project is designed to be easily extended:
+## Customization
 
-Add new assets to the assets/ directory
-Introduce new categories or features
-Modify the UI layout or controls
-Implement save and load functionality
+You can extend the editor by:
 
-Roadmap
-```
-Additional customization options
-Character save/export system
-Improved UI transitions
-Mobile support
-```
-# Contributing
+- Adding new asset categories (e.g. hats, eyebrows, outfits)  
+- Expanding existing categories with more options  
+- Adjusting layer order in CSS  
+- Modifying navigation behavior in JavaScript  
+- Changing UI layout or styling  
+- Adding randomizer / shuffle character feature  
 
-Contributions are welcome. Fork the repository, create a branch, and submit a pull request with your changes. Please.
+---
 
-# License
+## Planned Features
+
+- Digipog Support
+- Random character generator  
+- Drag-and-drop asset support  
+- Animated transitions between selections  
+- Mobile touch controls  
+- More advanced layering (opacity, blending, etc.)  
+
+---
+
+## Contributing
+
+Contributions are welcome.
+
+1. Fork the repository  
+2. Create a feature branch  
+3. Make your changes  
+4. Submit a pull request  
+
+Please keep the project lightweight and consistent with the existing editor structure.
+
+---
+
+## License
 
 MIT License
 
-# Acknowledgements
+---
 
-Inspired by Mii Maker and similar avatar creation systems.
-Thank you @Asa-DB for helping me out with some things
+## Acknowledgements
 
+Inspired by console avatar editors such as Mii Maker and similar character creation systems.
 
-
-im gonna rewrite this eventually...
+Built as a modular experiment in browser-based character customization.
