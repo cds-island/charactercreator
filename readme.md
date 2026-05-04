@@ -53,21 +53,6 @@ This makes the system fast, modular, and easy to expand.
 
 ---
 
-## Controls
-
-### UI Navigation
-- Left / Right buttons → Cycle through options in a category  
-- Up / Down (optional) → Switch between categories  
-- Select button → Confirm or apply option  
-- Back button → Return to category menu  
-
-### Keyboard (if enabled)
-- Arrow keys → Navigate options  
-- Enter → Select  
-- Escape → Back  
-
----
-
 ## Character Categories
 
 Typical categories include:
