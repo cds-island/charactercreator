@@ -85,9 +85,11 @@ Contributions are welcome. Fork the repository, create a branch, and submit a pu
 
 MIT License
 
-Acknowledgements
+# Acknowledgements
 
 Inspired by Mii Maker and similar avatar creation systems.
 Thank you @Asa-DB for helping me out with some things
 
--# im gonna rewrite this eventually...
+
+
+im gonna rewrite this eventually...
