@@ -21,10 +21,10 @@ Runs entirely in the browser
 Installation
 
 Clone the repository:
-
+```
 git clone https://github.com/cds-island/charactercreator.git
 cd charactercreator
-
+```
 No build step is required for basic usage.
 
 Usage
@@ -36,31 +36,32 @@ open index.html
 Or run a local server:
 
 # Python
-python -m http.server
+`python -m http.server`
 
 # Node
-npx serve
+`npx serve`
 
 Then navigate to:
 
-http://localhost:8000
+`http://localhost:8000`
 
-How It Works
+# How It Works
 
 Each character is built using a layered system. Individual assets (such as hair or eyes) are stacked visually, and selecting a new option replaces only that specific layer.
 
 The interface is structured around categories, allowing users to switch between different feature groups and apply changes in real time.
 
 Project Structure
-
+```
 charactercreator/
 ├── index.html
 ├── style.css
 ├── script.js
 ├── assets/
 └── README.md
+```
 
-Customization
+# Customization
 
 The project is designed to be easily extended:
 
@@ -70,19 +71,23 @@ Modify the UI layout or controls
 Implement save and load functionality
 
 Roadmap
+```
 Additional customization options
 Character save/export system
 Improved UI transitions
 Mobile support
-
-Contributing
+```
+# Contributing
 
 Contributions are welcome. Fork the repository, create a branch, and submit a pull request with your changes.
 
-License
+# License
 
 MIT License
 
 Acknowledgements
 
 Inspired by Mii Maker and similar avatar creation systems.
+Thank you @Asa-DB for helping me out with some things
+
+-# im gonna rewrite this eventually...
